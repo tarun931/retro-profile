@@ -1,0 +1,16 @@
+# @package _global_
+# WAVLM + MLP baseline for the final Table 1 (2026-10-16): RETRO's final TIMIT setting (retro_ordcon_fixed_l100_s5_b10:
+# fine-tuned WavLM Base+, groups of all 10 clips, 4 speakers per batch, 60 epochs, WavLM LR 1e-5 / rest 1e-4, AdamW +
+# warm-up/cosine, checkpoint on validation) with RETRO's three parts removed: a plain average over the clips instead of
+# MIL (MeanPooling), no OrdCon (weight 0), no kNN. = wavlm_direct_budget with groups of 10 instead of 8.
+# Learning-rate check like every baseline: WavLM LR 3e-6 / 1e-5 (this config) / 3e-5 at seed 42, lowest validation
+# score (val/combined_mae) gets seeds 1-4. Also Table 2's '- all three parts' row (same runs).
+#
+# Run with retro_finetune.slurm, EXPERIMENT=wavlm_direct_budget_b10, WITH_RETRIEVAL=0, EVAL_CORPUS=timit, EVAL_BAG_SIZE=10.
+defaults:
+  - wavlm_direct_budget
+
+run_name: wavlm_direct_budget_b10_${data.name}
+
+data:
+  bag_size: 10

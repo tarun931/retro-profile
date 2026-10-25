@@ -1,0 +1,15 @@
+# @package _global_
+# FAIRNESS CHECK (2026-10-15): the final TIMIT RETRO (retro_ordcon_fixed_l100_s5) trained on groups of ALL 10
+# TIMIT clips per speaker instead of 8 drawn at random each epoch. Gupta and Jaid train on all 10 clips of every
+# speaker each epoch; this gives RETRO the same audio per epoch. Nothing else changes. Chosen against the 8-clip
+# run on TIMIT validation (kNN on, every model scored on all 10 clips: EVAL_BAG_SIZE=10).
+#
+# Run with retro_finetune.slurm, EXPERIMENT=retro_ordcon_fixed_l100_s5_b10, WITH_RETRIEVAL=0, EVAL_CORPUS=timit,
+# EVAL_BAG_SIZE=10.
+defaults:
+  - retro_ordcon_fixed_l100_s5
+
+run_name: retro_ordcon_fixed_l100_s5_b10_${data.name}
+
+data:
+  bag_size: 10

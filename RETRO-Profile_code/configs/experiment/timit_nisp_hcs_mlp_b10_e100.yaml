@@ -1,0 +1,15 @@
+# @package _global_
+# TABLE 4b, WavLM + MLP (2026-10-17): the final Table 1 baseline (wavlm_direct_budget_b10_e100: RETRO's setting without
+# MIL, OrdCon and kNN; WavLM LR 1e-5; 100 epochs; groups of 10) trained on TIMIT + NISP + the age-balanced HeightCeleb split2 TRAINING sample. Settings unchanged from
+# Table 1. Calibrated on the 251 HeightCeleb split2 dev speakers like every Table 4 model. Seeds 42, 1, 2.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=timit_nisp_hcs_mlp_b10_e100, WITH_RETRIEVAL=0, EVAL_CORPUS=heightceleb_split2,
+# EVAL_BAG_SIZE=10.
+defaults:
+  - wavlm_direct_budget_b10_e100
+  - override /data: timit_nisp_hcsample
+
+run_name: timit_nisp_hcs_mlp_b10_e100_${data.name}
+
+data:
+  bag_size: 10

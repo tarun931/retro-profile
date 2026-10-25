@@ -1,0 +1,32 @@
+# @package _global_
+# TRAIN ON ALL OF NISP, TEST ON TIMIT (2026-10-11) -- the agreed base setting.
+#
+# Identical to retro_ordcon_fixed_l100_s5 (lambda 1.0 / scale 5, two-target, MIL
+# attention over clips, kNN retrieval OFF in training, 60 epochs, seed 42, same
+# per-step budget) except the TRAINING DATA: NISP instead of TIMIT.
+#
+# "All of NISP": the test corpus is TIMIT, so NISP's own test speakers are free
+# to train on. Training = NISP train + test (168 + 135 = 303 speakers, 24,822
+# clips); validation = NISP dev (42 speakers), which alone chooses the checkpoint.
+# TIMIT is never seen in training or selection.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=nisp_full_l100_s5, WITH_RETRIEVAL=0,
+# EVAL_CORPUS=timit -> runs/nisp_full_l100_s5_timit_s42, scored on TIMIT test.
+#
+# combined_normalisers stay at TIMIT's chance levels, as in every earlier NISP run
+# (see nisp_wavlm_direct.yaml), so selection weighs age vs height the same way.
+# Expect height to sit ~8 cm too low on TIMIT (NISP mean 166.9 cm vs TIMIT ~175):
+# report it as is, and any recalibration separately (SESSION_HANDOFF §3.10).
+defaults:
+  - retro_ordcon_fixed_l100_s5
+  - override /data: nisp
+
+run_name: nisp_full_l100_s5_${data.name}
+
+data:
+  splits:
+    train: train+test
+    val: dev
+    # Lightning's in-training test pass would otherwise score NISP test -- now
+    # training speakers. Point it at dev; the reported test is TIMIT (evaluate.py).
+    test: dev

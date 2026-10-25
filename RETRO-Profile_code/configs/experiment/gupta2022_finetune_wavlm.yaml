@@ -1,0 +1,32 @@
+# @package _global_
+# Gupta 2022 with a FINE-TUNED WavLM encoder -- the WavLM half of the matched
+# RQ1 pair (E12/E13 are the wav2vec2 half).
+#
+# Purpose. E13 compared RETRO against Gupta on wav2vec2 at a matched budget and
+# Gupta came out ahead on both targets. That is one encoder and one seed. This
+# config repeats the same comparison on WavLM Base+, so no conclusion rests on
+# which pretrained encoder happened to be chosen. Its partner is
+# `retro_finetune_budget` -- run the two together or neither.
+#
+# Everything except the encoder is inherited from gupta2022_finetune, so the
+# pair gupta2022_finetune / gupta2022_finetune_wavlm is also a clean encoder A/B
+# for Gupta itself: wav2vec2-base vs WavLM Base+ at an identical budget.
+#
+# NB on the attention mask. WavLM Base+ has feat_extract_norm == "layer", i.e.
+# it WAS pretrained with an attention mask, so `_HFFrameEncoder` passes one.
+# wav2vec2-base is "group" and gets none. That gating is automatic and must not
+# be overridden -- giving a "group" model a mask, or withholding one from a
+# "layer" model, degrades its representations (SESSION_HANDOFF.md §6.12).
+defaults:
+  - gupta2022_finetune
+
+run_name: gupta2022_finetune_wavlm_${data.name}
+
+model:
+  encoder:
+    _target_: retro_profile.models.encoders.WavLMFrameEncoder
+    pretrained_name: microsoft/wavlm-base-plus
+    # The default for this class is freeze: true (it backs the frozen baseline).
+    # This is the fine-tuned arm, so it must be set explicitly.
+    freeze: false
+    gradient_checkpointing: true

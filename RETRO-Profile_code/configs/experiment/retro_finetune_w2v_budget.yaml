@@ -1,0 +1,64 @@
+# @package _global_
+# RETRO on wav2vec2, BUDGET-MATCHED to Gupta 2022 Config A (E12).
+#
+# E11 (retro_finetune_w2v) removed the encoder confound but left a budget one.
+# Measured against gupta2022_finetune, E11 trained on:
+#
+#     total audio seen      209 h  vs  436 h   (48 %)
+#     optimizer steps       2,940  vs  24,500  (12 %)
+#     encoder updates       1,470  vs  24,500  (6 %)
+#
+# The wall-clock looked comparable (~27 vs ~30 min) only because bag mode does
+# an eighth of the updates on half-length clips. So E11's per-utterance deficit
+# (age 5.098 vs Gupta's ~4.24) confounds ARCHITECTURE with TRAINING BUDGET, in
+# the same way E11 itself was built to de-confound architecture from encoder.
+#
+# Two knobs close most of the gap:
+#
+#   max_audio_seconds 4 -> 8    392 spk x 8 clips x 8 s x 60 ep = 1,505,280 s,
+#                               96 % of Gupta's 1,568,000 s. This is the big one.
+#   accumulate 2 -> 1           98 optimizer steps/epoch instead of 49, so
+#                               5,880 over the run instead of 2,940.
+#
+# What CANNOT be matched: Gupta sees 3,920 training examples per epoch (one per
+# utterance), RETRO sees 392 (one per speaker). At batch 4 x bag 8 a RETRO step
+# already consumes 32 clips against Gupta's 8, so equal step counts would need
+# ~500 epochs. The 8x example deficit is structural to the bag formulation, not
+# a hyperparameter -- report it as a limitation rather than pretending it away.
+#
+# NOT matched deliberately: the learning rate. Gupta's flat 1e-6 works for it
+# because its randomly-initialised transformer branches get 24,500 steps. RETRO's
+# MIL pooling, projector and heads would get 5,880, and per CLAUDE.md §2 the head
+# is initialised to zero weight + midpoint bias -- at 1e-6 it would barely leave
+# the midpoint. That is a broken run, not a fair one. LR is a hyperparameter
+# regime, not a budget; the discriminative split stays.
+#
+# ALSO NOT matched: freeze_embedding stops encoder training at start_epoch 30,
+# so the backbone still gets ~2,940 updates against Gupta's 24,500. That is the
+# two-phase curriculum doing its job (SESSION_HANDOFF.md §6.11) and is left
+# alone -- changing start_epoch here would confound the budget test with the
+# start_epoch x epoch-count interaction documented in §3.6.
+#
+#   sbatch --export=ALL,EXPERIMENT=retro_finetune_w2v_budget \
+#          scripts/cluster/retro_finetune.slurm
+defaults:
+  - retro_finetune_w2v
+
+run_name: retro_finetune_w2v_budget_${data.name}
+
+data:
+  # Gupta's cap. TIMIT utterances fit inside 8 s, so this is "no truncation"
+  # in practice -- the same thing the paper does.
+  max_audio_seconds: 8.0
+
+training:
+  # 98 optimizer steps/epoch. The effective batch drops from 8 speakers to 4,
+  # but a step still carries 32 clips against Gupta's 8, so this trades batch
+  # size we did not need for update count we do.
+  accumulate_grad_batches: 1
+
+  scheduler:
+    # 200 was sized for E11's ~2,940 steps. At 5,880 it is 3.4 % of the run,
+    # which is still a sane warmup fraction; kept explicit so it is not silently
+    # inherited if the step count changes again.
+    warmup_steps: 200

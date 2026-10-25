@@ -1,0 +1,23 @@
+# @package _global_
+# HIERARCHICAL ATTENTION on the TIMIT base setting, second attempt (2026-10-15).
+#
+# Identical to retro_ordcon_fixed_l100_s5 (the TIMIT base) except each clip is reduced over time by learned
+# frame-level attention instead of a plain mean (frames within a clip, shared by both targets; then MIL over
+# clips, per target, unchanged). Same frame-attention settings as E26 (retro_hier_l100_s5) PLUS its own learning
+# rate 1e-3: in E26 the zero-initialised scorer never left the plain mean at the head LR (eff_share 1.000), so
+# that run tested nothing. With 1e-3 it learned on HeightCeleb + NISP (E34). Choose on TIMIT validation.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=retro_hier_falr1e3_l100_s5, WITH_RETRIEVAL=0, EVAL_CORPUS=timit.
+defaults:
+  - retro_ordcon_fixed_l100_s5
+
+run_name: retro_hier_falr1e3_l100_s5_${data.name}
+
+model:
+  encoder:
+    frame_pooling: attention
+    frame_attention_hidden: 128
+    frame_attention_dropout: 0.1
+
+training:
+  frame_attention_lr: 1.0e-3

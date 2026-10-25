@@ -1,0 +1,16 @@
+# @package _global_
+# VERIFICATION RUN for the 2026-10-10 OrdCon wiring fix -- retrieval ON.
+#
+# Identical to `retro_finetune_budget` in every setting; only the OrdCon wiring
+# differs (see retro_noknn_budget_fixed.yaml). This is the run that matters for
+# RQ3: retrieval previously cost +0.686 yr / +1.254 cm against the retrieval-off
+# model while searching a space OrdCon never shaped directly. The question is
+# whether that cost shrinks once OrdCon organises the space kNN searches.
+#
+# Compare against retro_finetune_budget_timit_s42, and against
+# retro_noknn_budget_fixed_timit_s42 for the new retrieval cost. The training
+# job writes ordcon_report.json itself (retrieval is on), including anchor MAE.
+defaults:
+  - retro_finetune_budget
+
+run_name: retro_finetune_budget_fixed_${data.name}

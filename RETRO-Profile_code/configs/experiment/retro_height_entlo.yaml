@@ -1,0 +1,52 @@
+# @package _global_
+# SUPERSEDED -- ran, gave a null result BY CONSTRUCTION. This inherits
+# retro_height_only_budget, where height attention is already uniform
+# (n_eff 7.971 of 8), so the penalty had nothing to correct. The sweep
+# that answers the question is `retro_noknn_ent{lo,mid,hi}`, on the
+# TWO-TARGET model where height concentrates to n_eff 3.782.
+# Kept for the record; do not re-run.
+# Height-only + a penalty on concentrated MIL attention (weight 0.1).
+#
+# WHAT THIS TESTS. Height attention concentrates hard -- an effective bag size
+# of 2.6-4.2 out of 8 across every run measured -- and on height MIL pooling
+# LOSES to plain averaging (5.41 +/- 0.16 against 5.09 +/- 0.09, E18). The
+# calibration diagnostic says why: the concentrated model's predictions are
+# almost as spread out as real heights (std ratio 0.97) while its within-gender
+# correlation is only 0.36, so most of that spread is noise. Concentrating
+# forfeits the sqrt(K) variance reduction of averaging and buys nothing.
+#
+# `attention_entropy_weight` penalises the normalised KL from the attention
+# distribution to uniform (losses/attention_entropy.py). At 0 the pooling is
+# ordinary MIL; as the weight grows attention is driven toward uniform, i.e.
+# toward mean pooling. So this converts a binary comparison into a CURVE, and an
+# interior optimum would show that some selectivity helps while the present
+# amount is too much.
+#
+# It also removes a confound. Today "averaging" is measured with
+# `evaluate.py --unit utterance`, which runs the model on single clips -- and a
+# bag-trained model has never seen an isolated clip, so that comparison mixes
+# pooling with an out-of-distribution input. Varying this weight changes ONLY
+# the pooling, with bag-mode evaluation on both sides.
+#
+# WHAT TO LOOK FOR, in order:
+#   1. n_eff for height in eval_spk/attention_report.md. It should rise from
+#      ~2.6-4.2 toward 8. If it does not, the weight is too small to bite.
+#   2. Height MAE against retro_height_only_budget (the weight-0 control).
+#   3. The SA preference. If it survives while n_eff rises, the attention is
+#      still finding identical-text utterances useful but spreading the weight;
+#      if SA collapses to 1.0 the penalty has simply erased the finding.
+#
+# HONEST EXPECTATION. Even a perfect result here lands near 5.03 -- the averaged
+# reading -- against a gender-mean-lookup baseline of 5.30. This tunes pooling;
+# it does not address the finding that height prediction is largely gender
+# (analyse_calibration.py). Gender-normalised height targets are the higher-
+# upside change.
+defaults:
+  - retro_height_only_budget
+
+run_name: retro_height_entlo_${data.name}
+
+training:
+  loss:
+    # Small: expected to shift n_eff without overwhelming the regression term.
+    attention_entropy_weight: 0.1

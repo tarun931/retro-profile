@@ -1,0 +1,18 @@
+# @package _global_
+# TUNING on Run B's setting (2026-10-14): train HeightCeleb + NISP, calibrate on 70 TIMIT validation speakers,
+# test on TIMIT. Run B (heightceleb_nisp_l100_s5) is the final RETRO version; this run changes ONE value:
+#     WavLM (encoder) learning rate 1e-5 -> 1e-6.
+# Grid (one value changed at a time): WavLM LR 1e-6 / 3e-6 / [1e-5 = Run B] / 3e-5; OrdCon lambda 0.3 / [1.0 = Run B]
+# / 3.0. Chosen on the leave-one-out calibrated TIMIT validation score (calibrate_predictions.py, val_loo_combined);
+# TIMIT test never used to choose. Why: Run B's HeightCeleb validation is best at epoch 9 of 60 and only
+# jumps around after it; Gupta trains WavLM at 1e-6. 3e-5 brackets the current value from above.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=heightceleb_nisp_enc1e6_l100_s5, WITH_RETRIEVAL=0, EVAL_CORPUS=timit; then
+# reevaluate.slurm EVAL_SPLIT=val OUT_SUFFIX=_val for the calibration.
+defaults:
+  - heightceleb_nisp_l100_s5
+
+run_name: heightceleb_nisp_enc1e6_l100_s5_${data.name}
+
+training:
+  encoder_lr: 1.0e-6

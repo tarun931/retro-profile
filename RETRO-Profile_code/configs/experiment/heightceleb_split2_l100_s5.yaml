@@ -1,0 +1,14 @@
+# @package _global_
+# RETRO, base setting -- trained and tested on HeightCeleb's 60/20/20 split BY GROUP (2026-10-12).
+#
+# Identical to heightceleb_only_l100_s5 (official split) except the data: configs/data/heightceleb_split2.yaml --
+# 751 train / 251 dev / 249 test speakers (with age 343 / 112 / 118); speakers sharing a video or an
+# identical clip are on one side. Validation = the 251 dev speakers.
+#
+# Run with EXPERIMENT=heightceleb_split2_l100_s5, EVAL_CORPUS=heightceleb_split2 (so evaluate.py
+# scores this split's test set) -> runs/heightceleb_split2_l100_s5_heightceleb_split2_s42.
+defaults:
+  - heightceleb_only_l100_s5
+  - override /data: heightceleb_split2
+
+run_name: heightceleb_split2_l100_s5_${data.name}

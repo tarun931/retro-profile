@@ -1,0 +1,71 @@
+# Single-target RETRO-Profile: HEIGHT ONLY.
+#
+# Why this is a separate model config rather than an override. `RetroProfile`
+# derives `target_names` from `heads.keys()` and wraps them in an nn.ModuleDict,
+# so a target has to be genuinely absent -- setting `heads.height: null` in an
+# experiment override merges a None into the dict and ModuleDict rejects it.
+# Hydra merges dicts rather than replacing them, so the height head can only be
+# removed by composing a different model config.
+#
+# The scientific point (CLAUDE.md §5): the projector is SHARED across targets,
+# so in the two-target model OrdCon must order one embedding space along an age
+# axis and a height axis at the same time. Those axes are not independent --
+# height correlates strongly with gender, age does not -- so the shared space is
+# a compromise between them. With age removed the whole space is free to order
+# along a single height axis.
+#
+# The mirror of retro_profile_age, and the more interesting half. Height is the
+# target whose attention actually does something: it concentrates hard on SA
+# (identical-text) utterances, 1.58-3.69x uniform weight across every run
+# measured, with an effective bag size of 2.6-4.2 out of 8. Age's attention is
+# near-uniform, so the age-only run gained from the freed projector alone. Here
+# both mechanisms are in play, so a larger effect is plausible.
+#
+# Everything else is identical to `retro_profile`, so the only difference is the
+# absence of age.
+name: retro_profile
+_target_: retro_profile.models.RetroProfile
+
+encoder:
+  _target_: retro_profile.models.WavLMEncoder
+  pretrained_name: microsoft/wavlm-base-plus
+  freeze: true
+  layer_aggregation: weighted
+  output_dim: 768
+
+pooling:
+  _target_: retro_profile.models.MILAttentionPooling
+  input_dim: 768
+  hidden_dim: 256
+  num_heads: 4
+  dropout: 0.1
+  gated: true
+  target_names: [height]          # one attention stack, not two
+
+heads:
+  height:
+    _target_: retro_profile.models.ResidualRetrievalHead
+    input_dim: 256
+    hidden_dim: 256
+    output_dim: 1
+    label_min: 140.0
+    label_max: 210.0
+    delta_clip: 5.0
+    use_retrieval: true
+    knn_k: 20
+
+projector:
+  _target_: retro_profile.models.MLPHead
+  input_dim: 768
+  hidden_dim: 512
+  output_dim: 256
+  num_hidden: 1
+  dropout: 0.1
+  l2_normalize: true
+
+retrieval:
+  _target_: retro_profile.retrieval.SearchConfig
+  k: 20
+  metric: cosine
+  weighting: softmax_distance
+  temperature: 0.1

@@ -1,0 +1,25 @@
+# @package _global_
+# RQ1 baseline #3 -- Jaid & AbdulHassan 2023 (gammatone initialisation).
+#
+# End-to-end raw-waveform 1D CNN, ~71 K parameters, no SSL encoder and no
+# download. Per their Sec. 4.1 every utterance is forced to exactly 3 s; the
+# model repeats short clips rather than zero-padding them.
+defaults:
+  - override /model: baseline_jaid2023
+  - override /data: timit
+  - override /training: jaid
+
+run_name: jaid2023_gammatone_${data.name}
+
+model:
+  filterbank: gammatone
+  n_filters: 64
+
+data:
+  targets: [age, height, gender]   # gender is an auxiliary task
+  train_unit: utterance            # the paper trains per utterance
+  max_audio_seconds: 3             # 3 s -> model fixes to exactly 48,000 samples
+  batch_size: 64                   # their batch size
+  bag_size: 8                      # eval only: bags aggregated to per-speaker
+  augmentation:
+    enabled: false

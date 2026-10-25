@@ -1,0 +1,38 @@
+# HeightCeleb + NISP as ONE training set (2026-10-12) -- train on both, test on TIMIT.
+# Each corpus is read by its own loader (configs/data/heightceleb.yaml, nisp.yaml); see
+# retro_profile.data.MultiCorpusDataModule. Per corpus: its manifests and the split that fills
+# each role; a null role takes none of its speakers.
+#
+# Training = HeightCeleb train+test (1,129 speakers) + NISP train+test (303, English session --
+# data/nisp, as in nisp_full_l100_s5). Validation = HeightCeleb dev ONLY (122 speakers), exactly
+# as in heightceleb_full_l100_s5, so the two runs differ in NISP's training speakers alone.
+# NISP dev (42) is unused, keeping NISP's training speakers identical to the NISP-only run.
+name: heightceleb_nisp
+_target_: retro_profile.data.MultiCorpusDataModule
+
+corpora:
+  heightceleb:
+    root: data/heightceleb
+    splits: {train: train+test, val: dev, test: dev}
+  nisp:
+    root: data/nisp
+    languages: null
+    splits: {train: train+test, val: null, test: null}
+
+sample_rate: 16000
+max_audio_seconds: 8.0
+min_audio_seconds: 0.5
+
+bag_size: 8
+batch_size: 16
+num_workers: 4
+
+targets: [age, height]
+normalize_targets: true
+
+# OFF, matching every TIMIT and NISP run (rule R6).
+augmentation:
+  enabled: false
+  noise_prob: 0.3
+  speed_perturb: [0.95, 1.05]
+  spec_augment: true

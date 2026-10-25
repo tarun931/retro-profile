@@ -1,0 +1,49 @@
+# ---------------------------------------------------------------------------
+# Top-level Hydra config. Composes a model, data module, training recipe,
+# and an optional experiment override.
+#
+# Usage:
+#   python scripts/train.py
+#   python scripts/train.py model=retro_profile data=timit
+#   python scripts/train.py experiment=retro_profile_full
+# ---------------------------------------------------------------------------
+defaults:
+  - _self_
+  - model: retro_profile
+  - data: timit
+  - training: default
+  - experiment: null
+
+# Global run identification ---------------------------------------------------
+run_name: ${model.name}_${data.name}_${now:%Y%m%d-%H%M%S}
+seed: 42
+output_dir: runs/${run_name}
+
+# Resume training from a checkpoint. null = fresh start.
+#   "auto"  -> resume from <output_dir>/checkpoints/last.ckpt if it exists, else
+#              start fresh. Ideal for Colab: re-run the SAME command and it picks
+#              up where a disconnect left off (point output_dir at Google Drive).
+#   <path>  -> resume from an explicit .ckpt file.
+resume_from: null
+
+# Hardware / accelerator ------------------------------------------------------
+device: auto                 # auto | cpu | cuda
+precision: 16-mixed          # 32 | 16-mixed | bf16-mixed
+num_workers: 4
+pin_memory: true
+
+# Logging ---------------------------------------------------------------------
+logger:
+  wandb:
+    enabled: false
+    project: retro-profile
+    entity: null
+  tensorboard:
+    enabled: true
+
+hydra:
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: multirun/${now:%Y%m%d-%H%M%S}
+    subdir: ${hydra.job.num}

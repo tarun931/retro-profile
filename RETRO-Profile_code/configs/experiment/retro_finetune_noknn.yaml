@@ -1,0 +1,47 @@
+# @package _global_
+# RETRO-Profile fine-tuned, with retrieval DISABLED THROUGHOUT — the honest
+# kNN ablation.
+#
+# Why this exists: `ResidualRetrievalHead.forward` has two mutually exclusive
+# branches (heads/residual.py). Before the datastore is populated it uses
+# `self.direct`; afterwards it uses `anchor + self.residual`. So the moment the
+# two-phase curriculum turns retrieval on at `start_epoch`, **the direct branch
+# stops receiving gradients** and is frozen for the rest of the run.
+#
+# That makes `evaluate.py` without `--datastore` a measurement of an abandoned
+# phase-1 head, not of "RETRO without retrieval". On the 60-epoch fine-tuned run
+# (start_epoch 10) it reported age MAE 14.83 — which is simply where the direct
+# head stood at epoch 10, and it still had Pearson 0.72, i.e. it had learned the
+# ranking but never an absolute level.
+#
+# The same flaw inflates SESSION_HANDOFF.md §3.3: those within-checkpoint
+# comparisons pit a fully-trained retrieval path against a direct path trained
+# for only `start_epoch` epochs, so the reported 6-11 % gain is an upper bound
+# whose size depends on a free parameter.
+#
+# This config trains the direct branch for the FULL run at an identical budget,
+# so `retro_finetune` vs `retro_finetune_noknn` is a fair A/B.
+defaults:
+  - retro_finetune
+
+run_name: retro_finetune_noknn_${data.name}
+
+model:
+  heads:
+    age:
+      use_retrieval: false
+    height:
+      use_retrieval: false
+
+training:
+  # Retrieval is off, so there is no phase 2 -- inheriting the parent's
+  # two-phase curriculum would build a datastore the heads never consult and
+  # freeze the embedding path halfway through for no reason. This must stay a
+  # plain single-phase run, or it stops being budget-matched to the parent in
+  # the only way that matters: the direct branch trains for all 60 epochs.
+  two_phase:
+    enabled: false
+
+  # No datastore is ever built, so nothing to rebuild either.
+  datastore_rebuild:
+    every_n_epochs: 0

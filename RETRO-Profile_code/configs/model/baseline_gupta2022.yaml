@@ -1,0 +1,26 @@
+# RQ1 baseline #2 -- Gupta 2022 bi-encoder transformer mixture.
+# arXiv:2203.11774. Two 6-layer transformer encoders (M/F branches) on frame-level
+# SSL features, statistical (mean+std) pooling, a predicted gender gate that mixes
+# the branches, and joint age/height regression (gender is an auxiliary task).
+#
+# Default encoder here is the FROZEN WavLM Base+ frame encoder (Config B, the
+# controlled architecture comparison). The `gupta2022_finetune` experiment swaps
+# in a trainable wav2vec2 frame encoder (Config A, the faithful reproduction).
+name: baseline_gupta2022
+_target_: retro_profile.models.baselines.Gupta2022Baseline
+
+encoder:
+  _target_: retro_profile.models.encoders.WavLMFrameEncoder
+  pretrained_name: microsoft/wavlm-base-plus
+  freeze: true
+  gradient_checkpointing: false
+
+feature_dim: 768        # = encoder output_dim
+num_layers: 6           # per-branch transformer depth (Gupta uses 6)
+nhead: 8
+dim_feedforward: 2048
+dropout: 0.5              # pooled + FC vectors only (Gupta's value)
+transformer_dropout: 0.1  # inside the 6-layer encoders (PyTorch default, as Gupta)
+fc_dim: 1024
+target_names: [age, height]     # regression targets; gender handled as an aux task
+gender_name: gender

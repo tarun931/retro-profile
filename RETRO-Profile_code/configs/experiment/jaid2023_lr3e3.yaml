@@ -1,0 +1,16 @@
+# @package _global_
+# JAID 2023, RECIPE A learning-rate search (2026-10-16): its paper recipe (3 s input, batch 64, up to 200 epochs with
+# early stopping, MAE loss, gender as an extra task) with the learning rate 3.0e-3 instead of the paper's 1e-3 (jaid2023).
+# Candidates 3e-4 / 1e-3 / 3e-3 plus recipe B (jaid2023_retrorecipe); the lowest val/combined_mae on the 70 TIMIT
+# validation speakers wins and gets seeds 1-4. Same treatment as Gupta (three learning rates, two recipes).
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=jaid2023_lr3e3, EVAL_CORPUS=timit, TORCH_SHARING_STRATEGY=file_system.
+defaults:
+  - jaid2023
+
+run_name: jaid2023_lr3e3_${data.name}
+
+training:
+  baseline:
+    head_lr: 3.0e-3
+    encoder_lr: 3.0e-3

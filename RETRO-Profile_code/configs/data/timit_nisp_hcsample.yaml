@@ -1,0 +1,40 @@
+# TIMIT + NISP + an AGE-BALANCED sample of HeightCeleb split2 TRAINING speakers (2026-10-17, TABLE 4b: transfer
+# with a small target sample). Identical to timit_nisp.yaml except for the third corpus.
+#
+# The sample (scripts/sample_heightceleb_ages.py, fixed seed) takes the same number of aged speakers from each
+# 10-year age band of split2 TRAIN, half men / half women where the band allows; its rows (absolute audio paths, as
+# in every HeightCeleb manifest) are written to data/heightceleb_split2_age_sample/manifests/train.csv and the speaker
+# list to heightceleb/table4b_age_sample.csv.
+# Never split2 dev or test: those calibrate and test Table 4. Validation stays TIMIT dev (70), as in 4a.
+name: timit_nisp_hcsample
+_target_: retro_profile.data.MultiCorpusDataModule
+
+corpora:
+  timit:
+    root: data/timit
+    splits: {train: train, val: dev, test: dev}
+  nisp:
+    root: data/nisp
+    languages: null
+    splits: {train: train+test, val: null, test: null}
+  heightceleb:
+    root: data/heightceleb_split2_age_sample
+    splits: {train: train, val: null, test: null}
+
+sample_rate: 16000
+max_audio_seconds: 8.0
+min_audio_seconds: 0.5
+
+bag_size: 8
+batch_size: 16
+num_workers: 4
+
+targets: [age, height]
+normalize_targets: true
+
+# OFF, matching every TIMIT and NISP run (rule R6).
+augmentation:
+  enabled: false
+  noise_prob: 0.3
+  speed_perturb: [0.95, 1.05]
+  spec_augment: true

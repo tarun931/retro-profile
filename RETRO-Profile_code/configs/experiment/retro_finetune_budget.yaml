@@ -1,0 +1,54 @@
+# @package _global_
+# RETRO-Profile on WavLM, budget-matched to Gupta -- the WavLM half of the
+# matched RQ1 pair (E12/E13 are the wav2vec2 half).
+#
+# Partner config: `gupta2022_finetune_wavlm`. Run the two together or neither;
+# a single arm of a matched pair measures nothing.
+#
+# This is `retro_finetune` (WavLM Base+, fine-tuned) with the same two budget
+# knobs that produced E13:
+#
+#   max_audio_seconds 4 -> 8    392 spk x 8 clips x 8 s x 60 ep = 1,505,280 s,
+#                               96 % of Gupta's 1,568,000 s at 8 s / 50 epochs.
+#   accumulate 2 -> 1           98 optimizer steps/epoch instead of 49, so
+#                               5,880 over the run instead of 2,940.
+#
+# Still not matched, and to be disclosed rather than engineered away:
+#   * Optimizer steps. Gupta trains one example per utterance (3,920/epoch),
+#     RETRO one per speaker (392/epoch), so Gupta gets ~8x more updates from the
+#     same data even after the accumulation change. This follows from the bag
+#     formulation itself.
+#   * Learning rate. Gupta's flat 1e-6 suits branches that get 24,500 steps.
+#     RETRO's pooling and heads start from random init (and per CLAUDE.md §2 the
+#     head is initialised to zero weight + midpoint bias), so at 1e-6 they would
+#     barely leave the midpoint. That is a broken run, not a fair one. LR is a
+#     hyperparameter regime, not a budget.
+#   * Trainable params: Gupta adds ~65 M of transformer branches, RETRO ~4 M of
+#     pooling and heads on top of the same encoder.
+#
+# Memory. 8 s x (4 speakers x bag 8) = 32 clips per step with gradients, double
+# E11's activation footprint. Gradient checkpointing is inherited and this fits
+# on a 48 GB L40S (E13 peaked well inside it). If a future variant OOMs, use
+# data.batch_size=2 training.accumulate_grad_batches=2 -- same effective batch,
+# half the peak.
+defaults:
+  - retro_finetune
+
+run_name: retro_finetune_budget_${data.name}
+
+data:
+  # Gupta's cap. TIMIT utterances fit inside 8 s, so this is "no truncation" in
+  # practice -- the same thing the paper does.
+  max_audio_seconds: 8.0
+
+training:
+  # 98 optimizer steps/epoch. The effective batch drops from 8 speakers to 4,
+  # but a step still carries 32 clips against Gupta's 8, so this trades batch
+  # size we did not need for update count we do.
+  accumulate_grad_batches: 1
+
+  scheduler:
+    # 200 was sized for retro_finetune's ~2,940 steps. At 5,880 it is 3.4 % of
+    # the run, still a sane warmup fraction; kept explicit so it is not silently
+    # inherited if the step count changes again.
+    warmup_steps: 200

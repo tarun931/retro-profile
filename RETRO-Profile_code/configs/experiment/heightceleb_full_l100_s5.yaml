@@ -1,0 +1,32 @@
+# @package _global_
+# RUN A -- TRAIN ON ALL OF HEIGHTCELEB, TEST ON TIMIT (2026-10-12), the agreed base setting.
+#
+# Identical to retro_ordcon_fixed_l100_s5 (lambda 1.0 / scale 5, two-target, MIL attention over
+# clips, kNN retrieval OFF in training, 60 epochs, seed 42, same per-step budget) except the
+# TRAINING DATA: HeightCeleb (VoxCeleb1, 1,251 speakers) instead of TIMIT.
+#
+# "All of HeightCeleb": TIMIT is the test, so HeightCeleb's own 40 test speakers train too --
+# train+test = 1,129 speakers, 138,136 clips; height for all, age for 517 (our ages,
+# heightceleb/vox1_height_age.csv). Validation = HeightCeleb dev (122 speakers, 56 with age, their
+# dated video only) alone chooses the checkpoint. TIMIT is never seen in training or selection.
+# Manifests (SESSION_HANDOFF §0.7.12), built on the GPU cluster with
+#   python scripts/prepare_heightceleb.py --wav-root <data-root>/voxceleb1/wav \
+#       --out data/heightceleb --test-age-clips all
+#
+# Run with retro_finetune.slurm, EXPERIMENT=heightceleb_full_l100_s5, WITH_RETRIEVAL=0,
+# EVAL_CORPUS=timit -> runs/heightceleb_full_l100_s5_timit_s42, scored on TIMIT test.
+# combined_normalisers stay at TIMIT's chance levels, as in every earlier run.
+# Run B (heightceleb_nisp_l100_s5) adds NISP's training speakers and nothing else.
+defaults:
+  - retro_ordcon_fixed_l100_s5
+  - override /data: heightceleb
+
+run_name: heightceleb_full_l100_s5_${data.name}
+
+data:
+  splits:
+    train: train+test
+    val: dev
+    # Lightning's in-training test pass would otherwise score HeightCeleb test -- now
+    # training speakers. Point it at dev; the reported test is TIMIT (evaluate.py).
+    test: dev

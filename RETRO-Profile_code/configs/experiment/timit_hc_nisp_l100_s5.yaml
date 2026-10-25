@@ -1,0 +1,15 @@
+# @package _global_
+# JOINT -- TRAIN ON TIMIT + HEIGHTCELEB + NISP, TEST ON TIMIT (2026-10-12, plan step 3b), base setting.
+#
+# Identical to retro_ordcon_fixed_l100_s5 (the TIMIT-only base: age 3.71 / height 5.38) except the
+# training data: 1,824 speakers instead of TIMIT's 392 (configs/data/timit_heightceleb_nisp.yaml).
+# Validation = TIMIT dev (70), as in the base, so the comparison isolates the extra data.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=timit_hc_nisp_l100_s5, WITH_RETRIEVAL=0,
+# EVAL_CORPUS=timit -> runs/timit_hc_nisp_l100_s5_timit_s42; kNN with reevaluate.slurm (_knn).
+# Partners: timit_hc_nisp_gupta_wavlm, timit_hc_nisp_jaid.
+defaults:
+  - retro_ordcon_fixed_l100_s5
+  - override /data: timit_heightceleb_nisp
+
+run_name: timit_hc_nisp_l100_s5_${data.name}

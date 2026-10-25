@@ -1,0 +1,26 @@
+# @package _global_
+# CONTROL: plain WavLM + direct regression, HEIGHT ONLY, budget-matched.
+#
+# The mirror of wavlm_direct_age_budget. Compare against
+# `retro_height_only_budget` (5.14 +/- 0.04).
+#
+# Read this one against the GENDER-MEAN LOOKUP (5.30 on TIMIT, 5.20 on NISP),
+# not just against RETRO -- SESSION_HANDOFF.md §3.9c. No model measured so far
+# beats that lookup by more than 0.2 cm, and on NISP none beats it at all, so a
+# height MAE here means very little without it. Report WITHIN-GENDER r beside
+# the MAE; that is the number that actually moves.
+#
+# Inherits retro_height_only_budget for the dict-merge reason documented there.
+defaults:
+  - retro_height_only_budget
+
+run_name: wavlm_direct_height_budget_${data.name}
+
+model:
+  pooling:
+    _target_: retro_profile.models.MeanPooling
+    input_dim: 768
+
+training:
+  loss:
+    ordcon_weight: 0.0

@@ -1,0 +1,15 @@
+# @package _global_
+# GUPTA 2022 AS PUBLISHED (wav2vec 2.0), recipe A candidate 3 of 3 (2026-10-18): as gupta2022_finetune_w2v2_lr1e6 with
+# the flat learning rate 1e-5 (encoder and head together). Twin of gupta2022_finetune_wavlm_lr1e5 with the encoder
+# swapped to facebook/wav2vec2-base and nothing else.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=gupta2022_finetune_w2v2_lr1e5, EVAL_CORPUS=timit.
+defaults:
+  - gupta2022_finetune
+
+run_name: gupta2022_finetune_w2v2_lr1e5_${data.name}
+
+training:
+  gupta:
+    encoder_lr: 1.0e-5
+    head_lr: 1.0e-5

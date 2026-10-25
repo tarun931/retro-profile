@@ -1,0 +1,122 @@
+# @package _global_
+# RETRO-Profile with a FINE-TUNED WavLM encoder.
+#
+# Every result in SESSION_HANDOFF.md §3 used a frozen encoder. This unfreezes
+# WavLM Base+ so RETRO can be compared against Gupta on Gupta's own terms
+# (fine-tuning is native to their method); frozen-RETRO vs fine-tuned-Gupta is
+# not a fair fight in either direction.
+#
+# Three things make this run different from every frozen run, and all three are
+# load-bearing -- see the comments on each block below.
+defaults:
+  - override /model: retro_profile
+  - override /data: timit
+  - override /training: default
+
+run_name: retro_finetune_${data.name}
+
+model:
+  encoder:
+    freeze: false
+    # Bag mode sends batch_size * bag_size clips through the encoder WITH
+    # gradients. Without recomputation this OOMs on any GPU.
+    gradient_checkpointing: true
+
+data:
+  # 4 speakers x 8 utts = 32 clips/step with gradients, against 128 at the
+  # frozen batch size of 16. Raise this only if the GPU has headroom to spare.
+  batch_size: 4
+  bag_size: 8
+  max_audio_seconds: 4.0
+  augmentation:
+    enabled: false
+
+training:
+  # Effective batch of 8 speakers (4 x 2). The frozen runs used 16, but they
+  # could afford it: at batch_size 4 an epoch is only 98 batches, so accumulating
+  # 4 would leave just 24 optimizer steps per epoch -- 1,470 over the whole run,
+  # against a 500-step warmup inherited from training/default.yaml. A third of
+  # training would be warmup. Accumulating 2 doubles the step count.
+  accumulate_grad_batches: 2
+
+  # Warmup sized for THIS run's step count (~2,940), not the 24,500 a
+  # per-utterance run like Gupta produces.
+  scheduler:
+    warmup_steps: 200
+
+  # Discriminative LR. `optimizer.lr` drives the newly-initialised MIL pooling,
+  # projector, heads and the encoder's layer_weights; `encoder_lr` drives the
+  # 94.4 M pretrained backbone only. One shared LR either destroys the
+  # pretrained features or fails to train the heads.
+  encoder_lr: 1.0e-5
+  optimizer:
+    lr: 1.0e-4
+
+  # Use the TWO-PHASE curriculum, not a bare PeriodicDatastoreRebuild.
+  #
+  # The first attempt used `datastore_rebuild`, and the residual head came out
+  # of a 60-epoch run with delta == 0.0000 for every speaker: completely
+  # untrained. Cause, from the per-epoch log: ModelCheckpoint scored across both
+  # phases, `val/total` peaked at epoch 27, retrieval only switched on at 30 --
+  # so the saved "best" checkpoint predated phase 2 entirely and the residual
+  # branch had never received a gradient. Evaluation then ran pure kNN on a
+  # phase-1 model. TwoPhaseRetrievalCurriculum's own docstring warns about this.
+  #
+  # Also from that log: height was improving monotonically to 5.02 through
+  # phase 1, then jumped to 8.17 the epoch retrieval engaged and oscillated
+  # 5.3-8.2 thereafter. `freeze_embedding` is the intended remedy -- the
+  # datastore is a snapshot of the projected space, so letting the encoder keep
+  # moving under it makes every retrieved neighbour progressively wronger.
+  two_phase:
+    enabled: true
+    start_epoch: 30
+    # Freeze encoder/pooling/projector in phase 2 so the datastore stays valid
+    # and phase 2 does the one job it exists for: learning the residual.
+    freeze_embedding: true
+    rebuild_every_n_epochs: 0     # nothing to rebuild once the space is frozen
+    # Begin phase 2 from the best phase-1 weights, not from wherever epoch 30
+    # happened to land.
+    restore_best_phase1: true
+    # THE FIX: clear ModelCheckpoint's tracker at the switch so "best" means
+    # best PHASE-2 model. Without this the saved checkpoint is a phase-1 model
+    # with an untrained residual -- exactly what happened.
+    reset_checkpoint_best: true
+
+  # start_epoch is NOT a free knob. `ResidualRetrievalHead` has two mutually
+  # exclusive branches; once the datastore exists, `self.direct` stops receiving
+  # gradients and is frozen at its epoch-`start_epoch` state. So this value
+  # decides how well the direct path is ever trained -- and therefore how large
+  # the apparent retrieval gain looks. At 10 the direct head was left at age MAE
+  # 14.8. The honest ablation is `retro_finetune_noknn`, which trains the direct
+  # branch for all 60 epochs.
+
+  # ---------------------------------------------------------------------------
+  # Selection: NOT on val/height/mae, and NOT on val/total either.
+  #
+  # This is SESSION_HANDOFF.md §7.2, and it is no longer hypothetical -- it cost
+  # three Gupta runs. The default recipe early-stops and checkpoints on height
+  # alone. Height sits near its physical floor and plateaus within ~2 epochs, so
+  # patience expires while age is still far from converged. The Gupta run died at
+  # epoch ~12 with age MAE 5.38/6.15; with selection on val/total it trained to
+  # epoch 14-of-50 and hit 4.12/4.48, matching the paper.
+  #
+  # val/total fixed that but introduced its own bias: it is the uncertainty-
+  # weighted TRAINING LOSS, and age's dynamic range over a run (~18.5 -> 4.2)
+  # is roughly 10x height's (~6.7 -> 5.3), so the sum tracks age almost alone.
+  # On E11 it selected epoch 48 (val age 4.54 / height 5.97) when epoch 26 was
+  # better on BOTH targets (4.13 / 5.29) -- a checkpoint 0.41 yr and 0.68 cm
+  # worse than one the run had already reached.
+  #
+  # val/combined_mae sums the REPORTED MAEs, each divided by its chance-level
+  # MAE, so the metric being selected on is the metric being reported.
+  early_stopping:
+    enabled: false
+
+  checkpoint:
+    monitor: val/combined_mae
+    mode: min
+    # 3, not 1 (~2 GB each at this model size). With save_top_k: 1 the E11
+    # selection mistake was unrecoverable -- the better epoch's weights no
+    # longer existed and the run had to be repeated to get them back.
+    save_top_k: 3
+    save_last: true

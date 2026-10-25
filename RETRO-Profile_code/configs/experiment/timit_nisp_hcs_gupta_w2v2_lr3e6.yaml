@@ -1,0 +1,16 @@
+# @package _global_
+# TABLE 4b, Gupta 2022 AS PUBLISHED (wav2vec 2.0) (2026-10-19): twin of timit_nisp_hcs_gupta_lr3e6 with the paper's
+# encoder (facebook/wav2vec2-base) instead of WavLM Base+, and nothing else (tests/test_gupta_w2v2.py): trained on
+# TIMIT + NISP + the age-balanced HeightCeleb split2 TRAINING sample, 10 fresh clips per speaker per epoch. Calibrated
+# on the 251 HeightCeleb split2 dev speakers. Seeds 42, 1, 2.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=timit_nisp_hcs_gupta_w2v2_lr3e6, EVAL_CORPUS=heightceleb_split2
+# (scripts/cluster/submit_table4.sh VERSION=4b ONLY=gupta_w2v2).
+defaults:
+  - gupta2022_finetune_w2v2_lr3e6
+  - override /data: timit_nisp_hcsample
+
+run_name: timit_nisp_hcs_gupta_w2v2_lr3e6_${data.name}
+
+data:
+  utts_per_speaker: 10

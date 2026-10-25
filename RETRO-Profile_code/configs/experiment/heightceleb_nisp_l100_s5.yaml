@@ -1,0 +1,17 @@
+# @package _global_
+# RUN B -- TRAIN ON HEIGHTCELEB + NISP, TEST ON TIMIT (2026-10-12), the agreed base setting.
+#
+# Identical to heightceleb_full_l100_s5 (Run A) except that NISP's 303 training speakers
+# (train+test, English session, as in nisp_full_l100_s5) join HeightCeleb's 1,129: 1,432 speakers.
+# Same validation (HeightCeleb dev, 122 speakers) and same TIMIT test, so A vs B answers one
+# question: does adding NISP help on TIMIT? Corpora and roles: configs/data/heightceleb_nisp.yaml.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=heightceleb_nisp_l100_s5, WITH_RETRIEVAL=0,
+# EVAL_CORPUS=timit -> runs/heightceleb_nisp_l100_s5_timit_s42, scored on TIMIT test.
+# NISP heights sit ~8 cm below TIMIT's and its ages stop at 47.5 (nisp_full_l100_s5 results):
+# the label statistics are computed over both corpora together.
+defaults:
+  - retro_ordcon_fixed_l100_s5
+  - override /data: heightceleb_nisp
+
+run_name: heightceleb_nisp_l100_s5_${data.name}

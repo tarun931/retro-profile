@@ -1,0 +1,27 @@
+# @package _global_
+# ABLATION ROW 3 -- + OrdCon (Novelty 2).
+# Row 2 with the order-enhanced contrastive loss switched on. Still no retrieval.
+# Row 2 -> Row 3 answers RQ4 (does OrdCon help?).
+defaults:
+  - override /model: retro_profile
+  - override /data: timit
+  - override /training: default
+
+run_name: ablation_3_ordcon_${data.name}
+
+model:
+  heads:                       # Novelty 3 still OFF
+    age: {use_retrieval: false}
+    height: {use_retrieval: false}
+
+training:
+  max_epochs: 60
+  loss:
+    ordcon_weight: 0.3         # Novelty 2 ON
+
+data:
+  max_audio_seconds: 4
+  batch_size: 16
+  bag_size: 8
+  augmentation:
+    enabled: false

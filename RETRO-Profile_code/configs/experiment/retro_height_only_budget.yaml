@@ -1,0 +1,61 @@
+# @package _global_
+# RETRO-Profile, HEIGHT ONLY -- single-task, WavLM, budget-matched, retrieval off.
+#
+# The mirror of `retro_age_only_budget`, and the more interesting half.
+#
+# The hypothesis. The projector is shared across targets (CLAUDE.md §5), so in
+# the two-target model OrdCon must order ONE embedding space along an age axis
+# and a height axis simultaneously. Those axes conflict: height is substantially
+# gender (overall r 0.69-0.72 but only 0.32-0.40 WITHIN gender,
+# SESSION_HANDOFF.md §3.1b) while age is not. E17 showed the age half of this --
+# dropping height moved age from 3.839 to 3.593 (three seeds).
+#
+# Why a larger effect is plausible here than for age. In E17 the age-only
+# attention came out essentially uniform (n_eff 7.98 of 8, entropy 0.999), so
+# that gain came from the freed projector ALONE -- the attention contributed
+# nothing because age has nothing to select on in TIMIT's read speech. Height is
+# the opposite: its attention concentrates hard on SA (identical-text)
+# utterances, 1.58-3.69x uniform across every run measured, n_eff 2.6-4.2 of 8.
+# So height has both mechanisms available, not just one.
+#
+# The competing prediction, worth stating so the result is not read as a
+# surprise either way: height's own concentration is what costs it the sqrt(K)
+# variance reduction that plain averaging gets, which is why averaging beats MIL
+# on height (5.09 +/- 0.09 against 5.41 +/- 0.16, E18). Freeing the projector
+# may simply let it concentrate harder and lose more. Either outcome is
+# informative.
+#
+# Baseline for comparison: `retro_noknn_budget`, which is this config with age
+# added back and nothing else different. Retrieval is off in both. Compare
+# HEIGHT only; this run has no age metrics.
+#
+# Inherits retro_finetune_budget, NOT retro_noknn_budget -- the latter sets
+# `model.heads.age.use_retrieval: false`, and Hydra MERGES dicts, so that block
+# would resurrect an `age` key on top of the height-only model: a head with no
+# `_target_`, which RetroProfile's nn.ModuleDict then rejects. The retrieval-off
+# settings are therefore repeated here rather than inherited.
+defaults:
+  - retro_finetune_budget
+  - override /model: retro_profile_height
+
+run_name: retro_height_only_budget_${data.name}
+
+data:
+  # One label column. The datamodule's label_stats, the loss, the metrics and
+  # the combined selection metric all key off this list. val/combined_mae
+  # reduces to height_MAE / 7.40.
+  targets: [height]
+
+model:
+  heads:
+    height:
+      use_retrieval: false
+
+training:
+  # Retrieval is off, so there is no phase 2; a two-phase curriculum would build
+  # a datastore the head never consults and freeze the embedding path halfway
+  # through for nothing.
+  two_phase:
+    enabled: false
+  datastore_rebuild:
+    every_n_epochs: 0

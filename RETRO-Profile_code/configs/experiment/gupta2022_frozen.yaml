@@ -1,0 +1,21 @@
+# @package _global_
+# Gupta 2022 baseline -- CONFIG B (controlled architecture comparison).
+# Same FROZEN WavLM Base+ encoder as RETRO-Profile, so the only difference vs
+# RETRO is the head (stat-pool + gender-mixture vs MIL + projector + retrieval).
+defaults:
+  - override /model: baseline_gupta2022
+  - override /data: timit
+  - override /training: gupta
+
+run_name: gupta2022_frozen_${data.name}
+
+# Gupta needs gender supervision and trains per utterance; eval stays per speaker.
+# Colab-T4-lean data budget (matches our lightened RETRO runs for fairness).
+data:
+  targets: [age, height, gender]
+  train_unit: utterance
+  batch_size: 16
+  bag_size: 8
+  max_audio_seconds: 4
+  augmentation:
+    enabled: false

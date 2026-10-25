@@ -1,0 +1,15 @@
+# @package _global_
+# TABLE 5, Gupta 2022 (2026-10-16): the final Table 1 Gupta (gupta2022_finetune_wavlm_lr3e6: paper recipe, flat LR 3e-6,
+# batch 8 clips, 50 epochs, gender extra task) trained on HeightCeleb + NISP. 10 fresh clips per speaker per epoch, so it
+# sees the same audio per epoch as RETRO's groups of 10 (HeightCeleb speakers have many clips). Calibrated on the 70 TIMIT
+# validation speakers. Seeds 42, 1, 2.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=heightceleb_nisp_gupta_lr3e6, EVAL_CORPUS=timit.
+defaults:
+  - gupta2022_finetune_wavlm_lr3e6
+  - override /data: heightceleb_nisp
+
+run_name: heightceleb_nisp_gupta_lr3e6_${data.name}
+
+data:
+  utts_per_speaker: 10

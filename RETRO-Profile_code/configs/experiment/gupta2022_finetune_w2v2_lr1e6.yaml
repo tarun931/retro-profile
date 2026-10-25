@@ -1,0 +1,20 @@
+# @package _global_
+# GUPTA 2022 AS PUBLISHED (wav2vec 2.0), recipe A candidate 1 of 3 (2026-10-18): the Table 1 Gupta setting with the
+# paper's own encoder, facebook/wav2vec2-base (the authors' config.json), instead of WavLM Base+. Everything else is
+# identical to gupta2022_finetune_wavlm (its twin; tests/test_gupta_w2v2.py pins the difference to the encoder):
+# flat learning rate for the whole model, batch 8 clips, all 10 clips of every training speaker each epoch, 50 epochs,
+# no early stopping, gender extra task, uncertainty-weighted loss, no mixup, checkpoint on val/combined_mae.
+# Fair tuning exactly as for the WavLM row: learning rate 1e-6 (paper) / 3e-6 / 1e-5 and RETRO's recipe
+# (gupta2022_finetune_w2v2_retrorecipe), seed 42; the lowest validation score gets seeds 1-4.
+# New run name on purpose: the 2026-08-30 wav2vec2 reproduction (runs/gupta2022_finetune_timit_s42) is not reused.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=gupta2022_finetune_w2v2_lr1e6, EVAL_CORPUS=timit.
+defaults:
+  - gupta2022_finetune
+
+run_name: gupta2022_finetune_w2v2_lr1e6_${data.name}
+
+training:
+  gupta:
+    encoder_lr: 1.0e-6
+    head_lr: 1.0e-6

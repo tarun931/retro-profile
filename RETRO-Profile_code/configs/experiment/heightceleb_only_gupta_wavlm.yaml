@@ -1,0 +1,18 @@
+# @package _global_
+# BASELINE -- Gupta 2022, fine-tuned WavLM Base+, trained and tested on HeightCeleb alone
+# (2026-10-12). Partner of heightceleb_only_l100_s5: same official split (train 1,089 / dev 122 /
+# test 40) and the same test speakers.
+#
+# Identical to gupta2022_finetune_wavlm except the data and utts_per_speaker: 8 -- 8 fresh clips
+# per speaker each epoch instead of every clip (see heightceleb_nisp_gupta_wavlm.yaml for why).
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=heightceleb_only_gupta_wavlm, EVAL_CORPUS=heightceleb;
+# per-speaker score from reevaluate.slurm afterwards.
+defaults:
+  - gupta2022_finetune_wavlm
+  - override /data: heightceleb
+
+run_name: heightceleb_only_gupta_wavlm_${data.name}
+
+data:
+  utts_per_speaker: 8

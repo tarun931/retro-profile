@@ -1,0 +1,12 @@
+# @package _global_
+# Ablation: disable OrdCon loss (regression only).
+defaults:
+  - override /model: retro_profile
+  - override /data: timit
+  - override /training: default
+
+run_name: ablation_no_ordcon_${data.name}
+
+training:
+  loss:
+    ordcon_weight: 0.0

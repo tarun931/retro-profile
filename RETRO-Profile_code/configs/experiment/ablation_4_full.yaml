@@ -1,0 +1,37 @@
+# @package _global_
+# ABLATION ROW 4 -- full RETRO-Profile (+ kNN residual retrieval, Novelty 3).
+# Row 3 with retrieval switched on, trained with the two-phase curriculum so the
+# residual head actually learns. Row 3 -> Row 4 answers RQ3 (does retrieval beat
+# direct regression?).
+#
+# Differs from `retro_two_phase` in exactly one way: reset_checkpoint_best=true,
+# so ModelCheckpoint selects the best PHASE-2 model. Every ablation row is then
+# evaluated at its best-by-validation checkpoint -- an apples-to-apples protocol.
+defaults:
+  - override /model: retro_profile
+  - override /data: timit
+  - override /training: default
+
+run_name: ablation_4_full_${data.name}
+
+training:
+  max_epochs: 70               # 40 epochs of phase 1 + up to 30 of phase 2
+  two_phase:
+    enabled: true
+    start_epoch: 40
+    restore_best_phase1: true  # index phase 1's BEST embedding, not a drifted one
+    reset_checkpoint_best: true  # <- select the best PHASE-2 checkpoint
+    freeze_embedding: true
+    rebuild_every_n_epochs: 0
+    reset_early_stopping: true
+  early_stopping:
+    patience: 15
+  loss:
+    ordcon_weight: 0.3
+
+data:
+  max_audio_seconds: 4
+  batch_size: 16
+  bag_size: 8
+  augmentation:
+    enabled: false

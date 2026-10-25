@@ -1,0 +1,96 @@
+# Default training recipe.
+# Maps directly onto retro_profile.training.RetroProfileLitModule kwargs.
+
+max_epochs: 60
+gradient_clip_val: 1.0
+accumulate_grad_batches: 1
+val_check_interval: 1.0
+
+# Loss configuration --------------------------------------------------------
+loss:
+  regression_kind: smooth_l1            # mse | l1 | smooth_l1
+  regression_weight: 1.0
+  ordcon_weight: 0.3                    # 0 to disable OrdCon
+  # Which embedding OrdCon organises. `retrieval` = the shared vector the FAISS
+  # datastore indexes (the design). Runs before 2026-10-10 used `first_target`:
+  # both ordering terms shaped the AGE-pooled vector. Only matters for
+  # two-target models with MIL pooling; identical otherwise.
+  ordcon_embedding: retrieval
+  ordcon_kwargs:
+    margin: 0.1
+    magnitude_gain: 1.0
+    # UNITS ARE SET BY magnitude_units -- read losses/ordcon.py before changing.
+    # `loss` keeps every run to date bit-identical: 5.0 here means 5 STANDARD
+    # DEVIATIONS (~38 yr / ~49 cm on TIMIT), so the magnitude hinge is mostly
+    # inactive. Do NOT switch to `label` with 5.0: with L2-normalised
+    # embeddings that is unsatisfiable for 26% of age pairs and 53% of height
+    # pairs. Value pending a decision (2026-10-10).
+    magnitude_scale: 5.0
+    magnitude_units: loss
+
+  # Penalty on MIL attention that concentrates on too few utterances -- the
+  # normalised KL from the attention distribution to uniform, 0 for uniform and
+  # 1 when all weight sits on one clip (losses/attention_entropy.py).
+  #
+  # 0.0 disables it, which is the behaviour of every run to date. Raise it to
+  # interpolate between MIL attention and mean pooling: height concentrates to
+  # an effective bag size of 2.6-4.2 out of 8 and LOSES to plain averaging
+  # there, so this is the knob that tests whether that concentration is the
+  # cause. `attention_entropy_per_target` overrides it per target, e.g. to
+  # penalise height while leaving age (already near-uniform) alone.
+  attention_entropy_weight: 0.0
+  attention_entropy_per_target: null
+
+# Optimizer / scheduler ------------------------------------------------------
+optimizer:
+  name: adamw
+  lr: 3.0e-4
+  weight_decay: 1.0e-2
+  betas: [0.9, 0.98]
+
+scheduler:
+  name: warmup_cosine
+  warmup_steps: 500
+  total_steps: 30000                    # set by train.py from steps/epoch * max_epochs
+  min_lr_ratio: 0.05
+
+# Callbacks ------------------------------------------------------------------
+# Selection: never on `val/height/mae` alone (rule R5, SESSION_HANDOFF.md §7.2).
+# Height sits near its physical floor and plateaus within ~2 epochs, so patience
+# expires and the checkpoint freezes while age is still far from converged -- it
+# cost three Gupta runs (age MAE 5.38/6.15 against the paper's 3.96/4.48; the
+# identical code monitoring a multi-target metric reached 4.12/4.48).
+#
+# `val/total` is not the answer either: it is the uncertainty-weighted training
+# loss, dominated by age, whose dynamic range over a run is ~10x height's. On
+# E11 it chose epoch 48 (val age 4.54 / height 5.97) over epoch 26 (4.13/5.29),
+# which was better on BOTH targets.
+#
+# `val/combined_mae` sums the reported MAEs, each over its chance-level MAE, so
+# the quantity selected on is the quantity reported. See `combined_normalisers`.
+early_stopping:
+  enabled: true
+  monitor: val/combined_mae
+  mode: min
+  patience: 12
+
+checkpoint:
+  monitor: val/combined_mae
+  mode: min
+  # 3, not 1: with save_top_k 1 the E11 selection mistake was unrecoverable --
+  # the better epoch's weights no longer existed and the run had to be repeated.
+  save_top_k: 3
+  save_last: true
+
+# Datastore rebuild during training (0 disables) ----------------------------
+datastore_rebuild:
+  every_n_epochs: 0
+  start_epoch: 5
+
+# Normalisers for `val/combined_mae`, the checkpoint-selection metric
+# (SESSION_HANDOFF.md §7.2). Each target's MAE is divided by its chance-level
+# MAE -- predicting the training mean -- so years and centimetres are
+# comparable. These are TIMIT's; recompute them for another corpus.
+combined_normalisers:
+  age: 5.91
+  height: 7.40

@@ -1,0 +1,39 @@
+# @package _global_
+# CONTROL: plain WavLM + direct regression, TWO TARGETS, budget-matched.
+#
+# Why this run exists. Every RETRO number in SESSION_HANDOFF.md §3.9a is
+# compared against Gupta 2022, a fine-tuned wav2vec2/WavLM bi-encoder. What has
+# never been measured at the CURRENT budget is the simpler question: does any of
+# the RETRO machinery beat a plain WavLM regressor trained the same way?
+#
+# `ablation_1_wavlm_mlp` was that control, but it is not comparable to anything
+# in §3.9a: it uses a FROZEN encoder, 4 s audio, and predates the
+# `val/combined_mae` selection fix (rule R6 -- results selected differently are
+# not comparable). This config is that same ablation rebuilt on the §3.9a
+# budget, so `retro_noknn_budget` vs `wavlm_direct_budget` is a one-variable A/B.
+#
+# What is turned off, relative to retro_noknn_budget:
+#   Novelty 1 (MIL)     -> MeanPooling, uniform weights over the bag
+#   Novelty 2 (OrdCon)  -> ordcon_weight 0.0
+#   Novelty 3 (kNN)     -> already off in the parent (use_retrieval: false)
+#
+# Everything else is inherited and MUST NOT be changed: fine-tuned WavLM, 8 s,
+# batch 4 x bag 8, accumulate 1, 60 epochs, discriminative LR 1e-4/1e-5,
+# selection on val/combined_mae, save_top_k 3.
+#
+# MeanPooling takes `**_`, so the MILAttentionPooling keys that Hydra merges in
+# underneath (hidden_dim, num_heads, gated, target_names) are swallowed
+# harmlessly. This is the same mechanism ablation_1_wavlm_mlp relies on.
+defaults:
+  - retro_noknn_budget
+
+run_name: wavlm_direct_budget_${data.name}
+
+model:
+  pooling:
+    _target_: retro_profile.models.MeanPooling
+    input_dim: 768
+
+training:
+  loss:
+    ordcon_weight: 0.0

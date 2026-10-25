@@ -1,0 +1,16 @@
+# @package _global_
+# WAVLM + MLP baseline, convergence check (2026-10-16): wavlm_direct_budget_b10 (WavLM LR 1e-5, the winner of the
+# 3e-6 / 1e-5 / 3e-5 check) trained for 100 epochs instead of 60. At 60 epochs its validation score was still falling
+# at the end (best epoch 52; 5-epoch average 1.476 at epoch 50 -> 1.464 at 59), which breaks the rule that every model
+# trains until validation stops improving. The warm-up/cosine schedule stretches over the 100 epochs (train.py).
+# 60 vs 100 epochs is chosen on validation (val/combined_mae); the winner gets seeds 1-4.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=wavlm_direct_budget_b10_e100, WITH_RETRIEVAL=0, EVAL_CORPUS=timit,
+# EVAL_BAG_SIZE=10.
+defaults:
+  - wavlm_direct_budget_b10
+
+run_name: wavlm_direct_budget_b10_e100_${data.name}
+
+training:
+  max_epochs: 100

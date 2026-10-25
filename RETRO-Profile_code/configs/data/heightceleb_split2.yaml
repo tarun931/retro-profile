@@ -1,0 +1,43 @@
+# HeightCeleb, 60/20/20 split BY GROUP (2026-10-12): all 1,251 speakers -> 751 train / 251 dev / 249 test
+# (with age 343 / 112 / 118, vs 15 in the official 40-speaker test). Speakers who share a YouTube video
+# or an identical clip stay in one split (SESSION_HANDOFF §0.7.14). Same loader as heightceleb.yaml;
+# only the manifests differ. Built on the GPU cluster with
+#   python scripts/prepare_heightceleb.py --wav-root <data-root>/voxceleb1/wav \
+#       --out data/heightceleb_split2 --split-mode grouped --md5-csv <data-root>/voxceleb1/clip_md5.csv
+name: heightceleb_split2
+_target_: retro_profile.data.HeightCelebDataModule
+
+root: data/heightceleb_split2
+sample_rate: 16000
+# Measured on 2,000 random clips (unpack job 60929672): 16 kHz mono, median 6.5 s, 90th
+# percentile 14.2 s, 35 % longer than 8 s. 8.0 keeps the budget IDENTICAL to every TIMIT and
+# NISP run in this project.
+max_audio_seconds: 8.0
+min_audio_seconds: 0.5
+
+bag_size: 8
+batch_size: 16
+num_workers: 4
+
+# Score the SAME clips and 8 s windows on every pass and for every model (2026-10-17, Table 4). A speaker without an
+# age keeps all their clips here (median ~100), so a bag of 10 is otherwise a fresh random draw each time, and 35 %
+# of clips are cut at a random point: two models -- or evaluate.py and fit_residual.py's reproduction check -- would
+# see different audio. Validation, test and per-clip scoring only; training keeps its random draw.
+eval_fixed_clips: true
+
+# Height for every speaker; age for 573 (NaN otherwise -- the masked loss skips it).
+targets: [age, height]
+normalize_targets: true
+
+# OFF, matching every TIMIT and NISP run. Turning it on would confound a cross-corpus
+# comparison with an augmentation change (rule R6).
+augmentation:
+  enabled: false
+  noise_prob: 0.3
+  speed_perturb: [0.95, 1.05]
+  spec_augment: true
+
+splits:
+  train: train
+  val:   dev
+  test:  test

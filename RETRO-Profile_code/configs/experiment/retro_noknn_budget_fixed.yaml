@@ -1,0 +1,20 @@
+# @package _global_
+# VERIFICATION RUN for the 2026-10-10 OrdCon wiring fix -- retrieval OFF.
+#
+# Identical to `retro_noknn_budget` in every setting. The only difference is in
+# the CODE: OrdCon is now applied to the retrieval embedding (the vector the
+# datastore indexes) instead of the first target's projected vector. Its saved
+# config records this as `training.loss.ordcon_embedding: retrieval`; the old
+# run's config has no such key.
+#
+# A new name rather than a rerun, for two reasons: `resume_from=auto` would
+# silently resume the old run's checkpoint (rule R8), and the old run is the
+# baseline this one is compared against.
+#
+# Compare against retro_noknn_budget_timit_s42. Read FIRST distance_spearman on
+# the retrieval embedding (scripts/cluster/ordcon_analysis.slurm -- the training job
+# does not run it with retrieval off), THEN MAE via scripts/paired_bootstrap.py.
+defaults:
+  - retro_noknn_budget
+
+run_name: retro_noknn_budget_fixed_${data.name}

@@ -1,0 +1,16 @@
+# @package _global_
+# FAIRNESS CHECK (2026-10-15): Gupta 2022 (WavLM, fine-tuned) with its single flat learning rate 1e-6 -> 3.0e-6
+# (encoder and head together, as in the paper). RETRO was tuned on TIMIT validation (OrdCon lambda, epochs, kNN k,
+# attention); Gupta ran with the paper's recipe only. This small learning-rate check (1e-6 / 3e-6 / 1e-5) gives
+# it tuning on the same validation set; the lowest val/combined_mae (its own checkpoint-selection score) wins.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=gupta2022_finetune_wavlm_lr3e6, EVAL_CORPUS=timit.
+defaults:
+  - gupta2022_finetune_wavlm
+
+run_name: gupta2022_finetune_wavlm_lr3e6_${data.name}
+
+training:
+  gupta:
+    encoder_lr: 3.0e-6
+    head_lr: 3.0e-6

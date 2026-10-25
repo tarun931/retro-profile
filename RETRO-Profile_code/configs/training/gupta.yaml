@@ -1,0 +1,48 @@
+# Training recipe for the Gupta 2022 baseline.
+# Selects the Gupta LightningModule (uncertainty loss + BCE gender + discriminative
+# LR). Colab-T4-lean defaults; tune to approach the paper's numbers.
+
+lit_module: gupta                # tells train.py to use Gupta2022LitModule
+
+max_epochs: 40
+gradient_clip_val: 1.0
+accumulate_grad_batches: 2       # effective batch = batch_size * 2 (T4 memory)
+val_check_interval: 1.0
+
+# Discriminative learning rates for stable fine-tuning.
+gupta:
+  gender_name: gender
+  encoder_lr: 1.0e-5             # low LR for the (fine-tuned) encoder
+  head_lr: 1.0e-4               # higher LR for the new transformers/heads
+  weight_decay: 1.0e-2
+
+scheduler:
+  name: warmup_cosine
+  warmup_steps: 200
+  total_steps: 20000            # overwritten by train.py from steps/epoch * max_epochs
+  min_lr_ratio: 0.05
+
+early_stopping:
+  enabled: true
+  monitor: val/combined_mae
+  mode: min
+  patience: 10
+
+checkpoint:
+  monitor: val/combined_mae
+  mode: min
+  save_top_k: 3                 # 1 made E11's bad selection unrecoverable
+  save_last: true
+
+# Gupta has no kNN datastore -> no periodic rebuild.
+datastore_rebuild:
+  every_n_epochs: 0
+  start_epoch: 5
+
+# Normalisers for `val/combined_mae`, the checkpoint-selection metric
+# (SESSION_HANDOFF.md §7.2). Each target's MAE is divided by its chance-level
+# MAE -- predicting the training mean -- so years and centimetres are
+# comparable. These are TIMIT's; recompute them for another corpus.
+combined_normalisers:
+  age: 5.91
+  height: 7.40

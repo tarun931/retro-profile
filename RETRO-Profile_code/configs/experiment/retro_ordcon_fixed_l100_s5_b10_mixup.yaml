@@ -1,0 +1,18 @@
+# @package _global_
+# MIXUP CHECK (2026-10-18): the final Table 1 RETRO (retro_ordcon_fixed_l100_s5_b10) with mixup on its training batches
+# (training/mixup.py) -- the augmentation Gupta et al. 2022 and Truong et al. 2022 use. RETRO trains on groups of 10
+# clips, so two speakers' groups are blended clip by clip with one lam ~ U(0, 1) per pair, and their labels alike.
+# Nothing else changes. Seed 42 first; compared with retro_ordcon_fixed_l100_s5_b10 seed 42 on TIMIT validation
+# (val/combined_mae of the chosen checkpoint, 1.3587 without mixup); test recorded only.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=retro_ordcon_fixed_l100_s5_b10_mixup, WITH_RETRIEVAL=0, EVAL_CORPUS=timit,
+# EVAL_BAG_SIZE=10; then fit_residual.slurm (Table 1 reading).
+defaults:
+  - retro_ordcon_fixed_l100_s5_b10
+
+run_name: retro_ordcon_fixed_l100_s5_b10_mixup_${data.name}
+
+training:
+  mixup:
+    enabled: true
+    alpha: 1.0

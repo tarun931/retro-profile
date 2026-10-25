@@ -1,0 +1,41 @@
+# TIMIT + HeightCeleb + NISP as ONE training set, tested on TIMIT (2026-10-12, plan step 3b).
+# Each corpus is read by its own loader; see retro_profile.data.MultiCorpusDataModule.
+#
+# Training = TIMIT train (392 speakers) + HeightCeleb train+test (1,129) + NISP train+test (303,
+# English session) = 1,824 speakers. HeightCeleb and NISP exactly as in heightceleb_nisp.yaml
+# (Run B), so this run differs from Run B only by TIMIT's training speakers and the validation set.
+# Validation = TIMIT dev ONLY (70 speakers) -- the target corpus; test = TIMIT test (168).
+# The question it answers: does extra in-the-wild data help on TIMIT, against the TIMIT-only base
+# (age 3.71 / height 5.38)?
+name: timit_heightceleb_nisp
+_target_: retro_profile.data.MultiCorpusDataModule
+
+corpora:
+  timit:
+    root: data/timit
+    splits: {train: train, val: dev, test: test}
+  heightceleb:
+    root: data/heightceleb
+    splits: {train: train+test, val: null, test: null}
+  nisp:
+    root: data/nisp
+    languages: null
+    splits: {train: train+test, val: null, test: null}
+
+sample_rate: 16000
+max_audio_seconds: 8.0
+min_audio_seconds: 0.5
+
+bag_size: 8
+batch_size: 16
+num_workers: 4
+
+targets: [age, height]
+normalize_targets: true
+
+# OFF, matching every TIMIT and NISP run (rule R6).
+augmentation:
+  enabled: false
+  noise_prob: 0.3
+  speed_perturb: [0.95, 1.05]
+  spec_augment: true

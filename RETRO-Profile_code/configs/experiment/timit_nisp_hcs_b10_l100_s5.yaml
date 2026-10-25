@@ -1,0 +1,17 @@
+# @package _global_
+# TABLE 4b, RETRO (2026-10-17): the final Table 1 RETRO (retro_ordcon_fixed_l100_s5_b10: groups of 10 clips, OrdCon
+# lambda 1.0 / scale 5, WavLM LR 1e-5 / rest 1e-4, 60 epochs) trained on TIMIT + NISP + the age-balanced HeightCeleb split2 TRAINING sample (configs/data/timit_nisp_hcsample.yaml).
+# Nothing tuned for the transfer test; only the data change. Checkpoint chosen on TIMIT dev (training side). Then the
+# second stage (fit_residual.py --corpus heightceleb_split2 --train-from-run --calibrated) and the 2-number calibration
+# on the 251 HeightCeleb split2 dev speakers; tested on the 249 split2 test speakers. Seeds 42, 1, 2.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=timit_nisp_hcs_b10_l100_s5, WITH_RETRIEVAL=0, EVAL_CORPUS=heightceleb_split2,
+# EVAL_BAG_SIZE=10.
+defaults:
+  - retro_ordcon_fixed_l100_s5_b10
+  - override /data: timit_nisp_hcsample
+
+run_name: timit_nisp_hcs_b10_l100_s5_${data.name}
+
+data:
+  bag_size: 10

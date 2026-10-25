@@ -1,0 +1,19 @@
+# @package _global_
+# TUNING on Run B's setting (2026-10-14): train HeightCeleb + NISP, calibrate on 70 TIMIT validation speakers,
+# test on TIMIT. Run B (heightceleb_nisp_l100_s5) is the final RETRO version; this run changes ONE value:
+#     OrdCon weight lambda 1.0 -> 0.3 (magnitude_scale 5 unchanged).
+# Grid (one value changed at a time): WavLM LR 1e-6 / 3e-6 / [1e-5 = Run B] / 3e-5; OrdCon lambda 0.3 / [1.0 = Run B]
+# / 3.0. Chosen on the leave-one-out calibrated TIMIT validation score (calibrate_predictions.py, val_loo_combined);
+# TIMIT test never used to choose. Why: lambda 1.0 was chosen when training on TIMIT, never in this
+# cross-corpus setting; after calibration the limit is ranking (r 0.71), which OrdCon targets.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=heightceleb_nisp_l030_s5, WITH_RETRIEVAL=0, EVAL_CORPUS=timit; then
+# reevaluate.slurm EVAL_SPLIT=val OUT_SUFFIX=_val for the calibration.
+defaults:
+  - heightceleb_nisp_l100_s5
+
+run_name: heightceleb_nisp_l030_s5_${data.name}
+
+training:
+  loss:
+    ordcon_weight: 0.3

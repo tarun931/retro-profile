@@ -1,0 +1,38 @@
+# TIMIT + NISP as ONE training set, tested on HeightCeleb split2 (2026-10-17, TABLE 4a: pure transfer).
+# Each corpus is read by its own loader; see retro_profile.data.MultiCorpusDataModule.
+#
+# Training = TIMIT train (392 speakers) + NISP train+test (303, English session, exactly as in heightceleb_nisp.yaml)
+# = 695 speakers. Validation (chooses the checkpoint) = TIMIT dev ONLY (70) -- the training side, as Table 5 chooses
+# on the training side. NISP dev (42) is unused, as in heightceleb_nisp.yaml.
+# The test role is TIMIT dev too: train.py's final logged test pass then touches no test speakers. Table 4 is
+# scored on HeightCeleb split2 (EVAL_CORPUS=heightceleb_split2): calibrated on its 251 dev speakers, tested on its
+# 249 test speakers; neither appears here.
+name: timit_nisp
+_target_: retro_profile.data.MultiCorpusDataModule
+
+corpora:
+  timit:
+    root: data/timit
+    splits: {train: train, val: dev, test: dev}
+  nisp:
+    root: data/nisp
+    languages: null
+    splits: {train: train+test, val: null, test: null}
+
+sample_rate: 16000
+max_audio_seconds: 8.0
+min_audio_seconds: 0.5
+
+bag_size: 8
+batch_size: 16
+num_workers: 4
+
+targets: [age, height]
+normalize_targets: true
+
+# OFF, matching every TIMIT and NISP run (rule R6).
+augmentation:
+  enabled: false
+  noise_prob: 0.3
+  speed_perturb: [0.95, 1.05]
+  spec_augment: true

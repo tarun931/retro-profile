@@ -1,0 +1,13 @@
+# @package _global_
+# Ablation: replace MIL pooling with simple mean pooling.
+defaults:
+  - override /model: retro_profile
+  - override /data: timit
+  - override /training: default
+
+run_name: ablation_no_mil_${data.name}
+
+model:
+  pooling:
+    _target_: retro_profile.models.MeanPooling
+    input_dim: 768                  # = encoder output_dim (WavLM Base+)

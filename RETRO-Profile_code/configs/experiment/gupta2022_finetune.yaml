@@ -1,0 +1,76 @@
+# @package _global_
+# Gupta 2022 baseline -- CONFIG A (faithful reproduction).
+#
+# Target: the paper's Table 1, per-UTTERANCE, split M/F --
+#     age MAE 3.96 / 4.48    age RMSE 5.54 / 6.49
+#     height MAE 5.58 / 5.07 height RMSE 7.30 / 6.43
+# Evaluate with `--unit utterance` or the numbers are not comparable.
+#
+# Hyperparameters below are taken from the authors' own config.json
+# (github.com/tarun360/SpeakerProfiling): wav2vec2 upstream, flat LR 1e-6,
+# batch 8, 50 epochs, uncertainty loss, no audio truncation.
+#
+# Known remaining divergence: the paper also uses mixup, which we do not
+# implement. Run without it first; only add it if the gap is large.
+defaults:
+  - override /model: baseline_gupta2022
+  - override /data: timit
+  - override /training: gupta
+
+run_name: gupta2022_finetune_${data.name}
+
+# Swap the frozen WavLM encoder for a trainable wav2vec2 frame encoder.
+# NB: HF's freeze_feature_encoder() freezes all 7 conv layers; the paper freezes
+# the first 5. Marginal, and ours is the more conservative choice.
+model:
+  encoder:
+    _target_: retro_profile.models.encoders.Wav2Vec2FrameEncoder
+    pretrained_name: facebook/wav2vec2-base
+    freeze: false
+    freeze_feature_extractor: true
+    gradient_checkpointing: true
+
+data:
+  targets: [age, height, gender]
+  train_unit: utterance
+  batch_size: 8               # the paper's batch size
+  bag_size: 8                 # only used by the per-speaker eval protocol
+  max_audio_seconds: 8.0      # the paper does not truncate; 8 s covers TIMIT
+  augmentation:
+    enabled: false
+
+training:
+  max_epochs: 50              # the paper's epoch count
+  accumulate_grad_batches: 1  # batch 8 means batch 8, not an effective 16
+  gupta:
+    # The paper uses a single flat Adam LR of 1e-6 for the whole model, not the
+    # discriminative encoder/head split our other runs use.
+    encoder_lr: 1.0e-6
+    head_lr: 1.0e-6
+
+  # ---------------------------------------------------------------------------
+  # Selection: NOT on val/height/mae.
+  #
+  # The default recipe early-stops and checkpoints on height alone. Height is
+  # near its physical floor and plateaus within ~2 epochs, so patience expires
+  # while age is still far from converged -- the first attempt at this run died
+  # at ~epoch 12 with its best checkpoint at epoch 1 and age MAE 5.4/6.2 against
+  # the paper's 3.96/4.48. This is SESSION_HANDOFF.md §7.2 in the wild.
+  #
+  # The paper trains a fixed 50 epochs and never mentions early stopping, so the
+  # faithful choice is to disable it and select on a multi-target metric.
+  #
+  # This previously monitored val/total, the uncertainty-weighted training loss.
+  # That reproduced the paper, but E11 showed val/total is dominated by age --
+  # its dynamic range over a run is ~10x height's -- and can select a checkpoint
+  # worse on both targets than one already seen. val/combined_mae sums the
+  # reported MAEs, each over its chance-level MAE, so selection and reporting
+  # use the same quantity. Re-run before quoting §3.1b against this config.
+  early_stopping:
+    enabled: false
+
+  checkpoint:
+    monitor: val/combined_mae
+    mode: min
+    save_top_k: 3
+    save_last: true

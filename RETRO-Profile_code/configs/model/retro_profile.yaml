@@ -1,0 +1,59 @@
+# Full RETRO-Profile model configuration.
+name: retro_profile
+_target_: retro_profile.models.RetroProfile
+
+encoder:
+  _target_: retro_profile.models.WavLMEncoder
+  pretrained_name: microsoft/wavlm-base-plus   # proposal §4.1 encoder (Base+, 768-d)
+  freeze: true                    # freeze base; train only adapter + heads
+  layer_aggregation: weighted     # weighted | last | mean
+  output_dim: 768                 # WavLM Base+ hidden size
+
+pooling:
+  _target_: retro_profile.models.MILAttentionPooling
+  input_dim: 768                  # = encoder output_dim (WavLM Base+)
+  hidden_dim: 256
+  num_heads: 4                    # multiple heads inside each per-target stack
+  dropout: 0.1
+  gated: true                     # Ilse-style gated attention
+  target_names: [age, height]     # per-target attention specialization
+
+heads:
+  age:
+    _target_: retro_profile.models.ResidualRetrievalHead
+    input_dim: 256                # matches projector.output_dim
+    hidden_dim: 256
+    output_dim: 1
+    label_min: 18.0
+    label_max: 80.0
+    delta_clip: 6.0               # residual can move ±6 years from anchor
+    use_retrieval: true
+    knn_k: 20
+  height:
+    _target_: retro_profile.models.ResidualRetrievalHead
+    input_dim: 256
+    hidden_dim: 256
+    output_dim: 1
+    label_min: 140.0
+    label_max: 210.0
+    delta_clip: 5.0               # residual can move ±5 cm from anchor
+    use_retrieval: true
+    knn_k: 20
+
+# Embedding projector applied before OrdCon loss & FAISS indexing.
+projector:
+  _target_: retro_profile.models.MLPHead
+  input_dim: 768                  # = encoder output_dim (WavLM Base+)
+  hidden_dim: 512
+  output_dim: 256
+  num_hidden: 1
+  dropout: 0.1
+  l2_normalize: true              # so cosine retrieval is well-defined
+
+# Datastore search defaults (informational; used by SearchConfig consumers).
+retrieval:
+  _target_: retro_profile.retrieval.SearchConfig
+  k: 20
+  metric: cosine
+  weighting: softmax_distance
+  temperature: 0.1

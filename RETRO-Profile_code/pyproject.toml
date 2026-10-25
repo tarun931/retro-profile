@@ -1,0 +1,82 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retro-profile"
+version = "0.1.0"
+description = "Retrieval-Augmented Multiple-Instance Regression for Speaker Age & Height Estimation"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "RETRO-Profile contributors" }]
+keywords = ["speech", "speaker-profiling", "age-estimation", "height-estimation", "retrieval"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    "torch>=2.1",
+    "torchaudio>=2.1",
+    "transformers>=4.40",
+    "pytorch-lightning>=2.2",
+    "tensorboard>=2.16",        # train.py's default logger (TensorBoardLogger)
+    "hydra-core>=1.3",
+    "omegaconf>=2.3",
+    "faiss-cpu>=1.7.4",          # swap to faiss-gpu in environments where it builds cleanly
+    "numpy>=1.24,<2.0",
+    "scipy>=1.11",
+    "pandas>=2.0",
+    "soundfile>=0.12",
+    "librosa>=0.10",
+    "scikit-learn>=1.3",
+    "tqdm>=4.66",
+    "loguru>=0.7",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "pre-commit>=3.5",
+    "ipykernel",
+    "jupyter",
+    "matplotlib",
+    "seaborn",
+]
+
+[project.urls]
+Homepage = "https://github.com/<your-username>/retro-profile"
+Repository = "https://github.com/<your-username>/retro-profile"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"retro_profile" = ["py.typed"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "SIM"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+ignore_missing_imports = true
+warn_return_any = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q --strict-markers"

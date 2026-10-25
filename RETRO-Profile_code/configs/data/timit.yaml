@@ -1,0 +1,29 @@
+# TIMIT acoustic-phonetic continuous speech corpus.
+# Provides age + height labels for 630 speakers (462 train / 168 test).
+name: timit
+_target_: retro_profile.data.TimitDataModule
+
+root: data/timit                    # output of scripts/prepare_timit.py
+sample_rate: 16000
+max_audio_seconds: 8.0              # truncate long utterances
+min_audio_seconds: 0.5              # drop silent / corrupt utterances
+
+# Bag-aware sampling: each batch element is a speaker with up to bag_size utterances.
+bag_size: 8                         # TIMIT gives 10 utterances per speaker
+batch_size: 16                      # speakers per batch
+num_workers: 4
+
+# Targets
+targets: [age, height]
+normalize_targets: true             # per-target z-score; predictions denormalized at eval
+
+augmentation:
+  enabled: true
+  noise_prob: 0.3
+  speed_perturb: [0.95, 1.05]       # avoid 0.9/1.1 — biases pitch and harms height regression
+  spec_augment: true
+
+splits:
+  train: train
+  val:   dev                        # held-out subset of train speakers
+  test:  test

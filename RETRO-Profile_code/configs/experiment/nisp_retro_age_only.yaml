@@ -1,0 +1,22 @@
+# @package _global_
+# RETRO-Profile on NISP, AGE ONLY, retrieval off.
+#
+# The reason this run exists. SESSION_HANDOFF.md §3.9b found that MIL attention
+# selectivity on TIMIT is a MULTITASK ARTEFACT: height pools at n_eff 3.78
+# alongside age, but at 7.97 when it is the only target, and age behaves the same
+# way (7.98). That predicts uniform attention in ANY single-task model, on ANY
+# corpus. This is the independent test of that prediction.
+#
+# It also carries the second finding. On TIMIT, single-task height did not move
+# MAE (a three-way tie at ~5.1-5.3 cm) but raised WITHIN-GENDER correlation from
+# ~0.34 to 0.41-0.49 -- the metric that is not confounded by gender. Read that
+# number here, not MAE. NISP is ~2:1 male, so run analyse_calibration.py before
+# believing any height figure.
+defaults:
+  - retro_age_only_budget
+  - override /data: nisp
+
+run_name: nisp_retro_age_only_${data.name}
+
+data:
+  targets: [age]

@@ -1,0 +1,16 @@
+# @package _global_
+# TABLE 2 ABLATION '- OrdCon' (RQ4, 2026-10-16): the final TIMIT RETRO (retro_ordcon_fixed_l100_s5_b10) trained with
+# the OrdCon loss switched off (weight 0). MIL, the training recipe and the second stage (kNN + residual,
+# scripts/fit_residual.py) are unchanged. No tuning: an ablation changes one part only. Seeds 42, 1, 2, 3, 4 (paired
+# with full RETRO). These runs also feed Table 3 (neighbour quality with vs without OrdCon).
+#
+# Run with retro_finetune.slurm, EXPERIMENT=retro_ordcon_fixed_l100_s5_b10_noordcon, WITH_RETRIEVAL=0,
+# EVAL_CORPUS=timit, EVAL_BAG_SIZE=10; then fit_residual.slurm on the five runs.
+defaults:
+  - retro_ordcon_fixed_l100_s5_b10
+
+run_name: retro_ordcon_fixed_l100_s5_b10_noordcon_${data.name}
+
+training:
+  loss:
+    ordcon_weight: 0.0

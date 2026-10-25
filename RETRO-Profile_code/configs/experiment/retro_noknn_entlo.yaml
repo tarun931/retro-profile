@@ -1,0 +1,42 @@
+# @package _global_
+# Two-target RETRO + a penalty on concentrated MIL attention (weight 0.1).
+#
+# WHY THIS EXISTS, and why the earlier `retro_height_ent*` sweep did not answer
+# the question. Those three configs inherited `retro_height_only_budget`, where
+# height attention is ALREADY uniform (n_eff 7.971 of 8) -- so the penalty had
+# nothing to correct and the result was null by construction:
+#
+#     weight 0.0  n_eff 7.971  height MAE 5.14 +/- 0.04
+#     weight 0.1  n_eff 7.987  5.02
+#     weight 0.5  n_eff 7.999  5.17
+#     weight 2.0  n_eff 8.000  5.12
+#
+# Concentration only appears in the TWO-TARGET model: there height pools with
+# n_eff 3.782 while age sits at 7.338 (E20). That is the configuration with
+# something to fix, and it is what this config sweeps.
+#
+# THE HYPOTHESIS IS NOW SHARPER. Height's concentration looks like a response to
+# multitask interference rather than a property of speech -- give height its own
+# model and the selectivity vanishes. If that is right, penalising concentration
+# in the two-target model should push height toward its single-task behaviour:
+# n_eff up from 3.78 toward 8, within-gender correlation up from ~0.24-0.37
+# toward the ~0.41-0.49 that height-only achieves, at no cost to age (whose
+# attention is near-uniform already and has nothing to lose).
+#
+# WHAT TO READ, in order:
+#   1. height n_eff in eval_spk/attention_report.md -- did the penalty bite?
+#   2. WITHIN-GENDER height r in calibration_height.json, NOT height MAE. MAE is
+#      dominated by the gender split and moves by hundredths; within-gender r is
+#      the metric that measures real height signal.
+#   3. age MAE -- confirm the penalty did not cost anything on the target whose
+#      attention was already uniform.
+#   4. the SA preference. If n_eff rises AND the SA ratio collapses toward 1.0,
+#      that is direct evidence the SA effect was concentration-driven.
+defaults:
+  - retro_noknn_budget
+
+run_name: retro_noknn_entlo_${data.name}
+
+training:
+  loss:
+    attention_entropy_weight: 0.1

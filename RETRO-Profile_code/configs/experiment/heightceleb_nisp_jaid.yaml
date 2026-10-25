@@ -1,0 +1,20 @@
+# @package _global_
+# BASELINE -- Jaid & AbdulHassan 2023 (raw-waveform 1D CNN, gammatone init), trained on HeightCeleb +
+# NISP, tested on TIMIT (2026-10-12). Partner of heightceleb_nisp_l100_s5 (RETRO Run B): same
+# training speakers (1,432), same validation (HeightCeleb dev, 122), same TIMIT test.
+#
+# Identical to jaid2023 (per-utterance training, 3 s clips, batch 64, up to 200 epochs with early
+# stopping on val/combined_mae, age + height + gender) except the data, and utts_per_speaker: 8 --
+# 8 fresh clips per speaker each epoch instead of every clip, the audio RETRO's bags of 8 see
+# (see heightceleb_nisp_gupta_wavlm.yaml for why). Agreed 2026-10-12.
+#
+# Run with gupta_finetune.slurm (generic: train, select, evaluate), EXPERIMENT=heightceleb_nisp_jaid,
+# EVAL_CORPUS=timit; per-speaker score from reevaluate.slurm afterwards. First run of Jaid on the GPU cluster.
+defaults:
+  - jaid2023
+  - override /data: heightceleb_nisp
+
+run_name: heightceleb_nisp_jaid_${data.name}
+
+data:
+  utts_per_speaker: 8

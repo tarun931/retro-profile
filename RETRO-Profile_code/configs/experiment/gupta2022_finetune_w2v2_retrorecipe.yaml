@@ -1,0 +1,23 @@
+# @package _global_
+# GUPTA 2022 AS PUBLISHED (wav2vec 2.0), recipe B (2026-10-18): Gupta's model with its paper encoder
+# (facebook/wav2vec2-base) trained with RETRO's final TIMIT recipe. Twin of gupta2022_finetune_wavlm_retrorecipe with
+# the encoder swapped and nothing else: encoder 1e-5 / new layers 1e-4, 40 clips per optimiser step (8 clips x 5
+# accumulated batches; 40 at once ran out of GPU memory for the WavLM twin), 60 epochs, validation bags of 10 clips.
+# The recipe with the lower validation score (val/combined_mae, same 70 speakers) gets seeds 1-4.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=gupta2022_finetune_w2v2_retrorecipe, EVAL_CORPUS=timit.
+defaults:
+  - gupta2022_finetune
+
+run_name: gupta2022_finetune_w2v2_retrorecipe_${data.name}
+
+data:
+  batch_size: 8
+  bag_size: 10                # per-speaker scoring on all 10 TIMIT clips
+
+training:
+  accumulate_grad_batches: 5
+  max_epochs: 60
+  gupta:
+    encoder_lr: 1.0e-5
+    head_lr: 1.0e-4

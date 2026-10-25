@@ -1,0 +1,33 @@
+# @package _global_
+# OrdCon STRENGTH tuning (2026-10-10) -- lambda 1.0, magnitude_scale 5.0 (loss units).
+#
+# Identical to retro_noknn_budget_fixed (New A: fixed OrdCon wiring, retrieval
+# OFF, two-target, seed 42) except for OrdCon's weight and/or scale. Grid:
+#     lambda 0      -> retro_ordcon_l000_timit_s42 (14 Sep; OrdCon is skipped at
+#                      lambda 0, so the wiring fix does not apply to it)
+#     lambda 0.3, 5 -> retro_noknn_budget_fixed_timit_s42 (New A)
+#     lambda 0.3, 3 -> retro_ordcon_fixed_l030_s3
+#     lambda 1.0, 5 -> retro_ordcon_fixed_l100_s5
+#     lambda 1.0, 3 -> retro_ordcon_fixed_l100_s3
+#
+# Why: at lambda 0.3 / scale 5 OrdCon was 3-8% of the training loss and its
+# magnitude ("spacing") term was ~0 by the selected epoch. Scale 3 (loss units,
+# i.e. standard deviations) maps roughly the full TIMIT label range onto the
+# diameter of the unit sphere -- intended to switch the spacing term on; the
+# separately logged ordcon/<t>/magnitude shows whether it did.
+#
+# Retrieval is measured WITHOUT a separate two-phase run: after training,
+# reevaluate.slurm with WITH_RETRIEVAL=1 FORCE_RETRIEVAL=1 OUT_SUFFIX=_knn
+# switches kNN on at test time (prediction = kNN anchor). Valid because phase 2
+# of the two-phase recipe freezes the embedding OrdCon shapes (verified: anchor
+# identical at epochs 16, 39, 59 of retro_finetune_budget_fixed).
+defaults:
+  - retro_noknn_budget_fixed
+
+run_name: retro_ordcon_fixed_l100_s5_${data.name}
+
+training:
+  loss:
+    ordcon_weight: 1.0
+    ordcon_kwargs:
+      magnitude_scale: 5.0

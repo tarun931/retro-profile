@@ -1,0 +1,55 @@
+# Training recipe for the Jaid & AbdulHassan 2023 baseline.
+# Their Sec. 3: MAE loss for the regression pair + BCE for gender, combined as a
+# plain sum (no uncertainty weighting), 200 epochs, batch 64.
+#
+# The model is tiny (~71 K params) and trains from scratch, so a single learning
+# rate applies to everything -- there is no pretrained encoder to protect with a
+# lower LR.
+
+lit_module: multitask            # -> MultiTaskProfilingLitModule
+
+max_epochs: 200
+gradient_clip_val: 1.0
+accumulate_grad_batches: 1
+val_check_interval: 1.0
+
+baseline:
+  gender_name: gender
+  regression_kind: l1            # paper: mean absolute error
+  loss_combination: sum          # paper: plain sum of task losses
+  head_lr: 1.0e-3                # Adam-scale LR for a small from-scratch CNN
+  encoder_lr: 1.0e-3             # no separate encoder; kept for API symmetry
+  weight_decay: 1.0e-4
+
+scheduler:
+  name: warmup_cosine
+  warmup_steps: 200
+  total_steps: 20000             # overwritten by train.py from steps/epoch * max_epochs
+  min_lr_ratio: 0.05
+
+# Monitored metric kept identical to every other run in this project so the
+# comparison stays apples-to-apples.
+early_stopping:
+  enabled: true
+  monitor: val/combined_mae
+  mode: min
+  patience: 20                   # 200 epochs of a small model plateaus slowly
+
+checkpoint:
+  monitor: val/combined_mae
+  mode: min
+  save_top_k: 3
+  save_last: true
+
+# No kNN datastore for this baseline.
+datastore_rebuild:
+  every_n_epochs: 0
+  start_epoch: 5
+
+# Normalisers for `val/combined_mae`, the checkpoint-selection metric
+# (SESSION_HANDOFF.md §7.2). Each target's MAE is divided by its chance-level
+# MAE -- predicting the training mean -- so years and centimetres are
+# comparable. These are TIMIT's; recompute them for another corpus.
+combined_normalisers:
+  age: 5.91
+  height: 7.40

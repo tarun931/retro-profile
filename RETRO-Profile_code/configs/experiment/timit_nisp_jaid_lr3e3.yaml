@@ -1,0 +1,15 @@
+# @package _global_
+# TABLE 4a, Jaid 2023 (2026-10-17): the final Table 1 Jaid (jaid2023_lr3e3: paper recipe, LR 3e-3, 3 s input, batch
+# 64, up to 200 epochs with early stopping, gender extra task) trained on TIMIT + NISP. 10 fresh clips per speaker per
+# epoch, as RETRO's groups of 10. Calibrated on the 251 HeightCeleb split2 dev speakers. Seeds 42, 1, 2.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=timit_nisp_jaid_lr3e3, EVAL_CORPUS=heightceleb_split2,
+# TORCH_SHARING_STRATEGY=file_system.
+defaults:
+  - jaid2023_lr3e3
+  - override /data: timit_nisp
+
+run_name: timit_nisp_jaid_lr3e3_${data.name}
+
+data:
+  utts_per_speaker: 10

@@ -1,0 +1,25 @@
+# @package _global_
+# TRAIN ON ALL OF NISP, BOTH SESSIONS, TEST ON TIMIT (2026-10-11).
+#
+# Identical to nisp_full_l100_s5 (same 303 training speakers, same 42 validation
+# speakers, base setting, TIMIT test) except the clips: every NISP speaker read
+# one session in English and one in their own language (Hindi, Kannada,
+# Malayalam, Tamil, Telugu). data/nisp/manifests hold the ENGLISH session only
+# (prepare_nisp.py's default, chosen so every clip carries a sentence type);
+# this run adds the native-language session -- ~24,800 training clips instead of
+# 12,909. The difference between the two runs is whether non-English speech of
+# the same speakers helps predict English TIMIT.
+#
+# Manifests built separately on the GPU cluster, leaving data/nisp untouched:
+#   python scripts/prepare_nisp.py --raw <data-root>/nisp --out data/nisp_both --sessions both
+# prepare_nisp.py assigns splits by speaker, independent of --sessions, so the
+# speakers in each split match data/nisp exactly (verify before training).
+# Native-session clips have sentence_type UNK; only the attention-by-sentence
+# analysis uses it.
+defaults:
+  - nisp_full_l100_s5
+
+run_name: nisp_full_both_l100_s5_${data.name}
+
+data:
+  root: data/nisp_both

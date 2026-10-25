@@ -1,0 +1,31 @@
+# @package _global_
+# ABLATION ROW 1 -- WavLM + MLP (no novelties).
+# Mean pooling, no OrdCon, no retrieval. This is the plain SSL-embedding baseline
+# and doubles as the proposal's `wavlm_mlp` RQ1 baseline.
+defaults:
+  - override /model: retro_profile
+  - override /data: timit
+  - override /training: default
+
+run_name: ablation_1_wavlm_mlp_${data.name}
+
+model:
+  pooling:                     # Novelty 1 OFF: plain average over the bag
+    _target_: retro_profile.models.MeanPooling
+    input_dim: 768
+  heads:                       # Novelty 3 OFF: direct MLP regression
+    age: {use_retrieval: false}
+    height: {use_retrieval: false}
+
+training:
+  max_epochs: 60
+  loss:
+    ordcon_weight: 0.0         # Novelty 2 OFF
+
+# Matched budget -- identical across every ablation row.
+data:
+  max_audio_seconds: 4
+  batch_size: 16
+  bag_size: 8
+  augmentation:
+    enabled: false

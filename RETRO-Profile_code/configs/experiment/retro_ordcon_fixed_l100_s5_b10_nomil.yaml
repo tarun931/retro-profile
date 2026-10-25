@@ -1,0 +1,16 @@
+# @package _global_
+# TABLE 2 ABLATION '- MIL' (RQ2, 2026-10-16): the final TIMIT RETRO (retro_ordcon_fixed_l100_s5_b10) with the MIL
+# attention over clips replaced by a plain average of the clip vectors (MeanPooling: the averaged utterance
+# representation). OrdCon, the training recipe and the second stage (kNN + residual, scripts/fit_residual.py) are
+# unchanged. No tuning: an ablation changes one part only. Seeds 42, 1, 2, 3, 4 (paired with full RETRO).
+#
+# Run with retro_finetune.slurm, EXPERIMENT=retro_ordcon_fixed_l100_s5_b10_nomil, WITH_RETRIEVAL=0, EVAL_CORPUS=timit,
+# EVAL_BAG_SIZE=10; then fit_residual.slurm on the five runs.
+defaults:
+  - retro_ordcon_fixed_l100_s5_b10
+
+run_name: retro_ordcon_fixed_l100_s5_b10_nomil_${data.name}
+
+model:
+  pooling:
+    _target_: retro_profile.models.MeanPooling

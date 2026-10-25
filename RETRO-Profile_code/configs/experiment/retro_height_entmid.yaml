@@ -1,0 +1,20 @@
+# @package _global_
+# SUPERSEDED -- ran, gave a null result BY CONSTRUCTION. This inherits
+# retro_height_only_budget, where height attention is already uniform
+# (n_eff 7.971 of 8), so the penalty had nothing to correct. The sweep
+# that answers the question is `retro_noknn_ent{lo,mid,hi}`, on the
+# TWO-TARGET model where height concentrates to n_eff 3.782.
+# Kept for the record; do not re-run.
+# Height-only + attention-concentration penalty, weight 0.5.
+#
+# One point on a sweep. See `retro_height_only_entropy_lo` for the full
+# rationale; the three configs differ ONLY in
+# `training.loss.attention_entropy_weight`.
+defaults:
+  - retro_height_only_budget
+
+run_name: retro_height_entmid_${data.name}
+
+training:
+  loss:
+    attention_entropy_weight: 0.5

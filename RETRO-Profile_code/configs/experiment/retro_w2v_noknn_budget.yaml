@@ -1,0 +1,28 @@
+# @package _global_
+# RETRO-Profile on wav2vec2, retrieval OFF for the whole run, budget-matched.
+#
+# The wav2vec2 arm of the no-retrieval test. Pairs with `retro_noknn_budget`
+# (WavLM); see that file for the full rationale. Keeping both encoders means the
+# conclusion about retrieval does not rest on whichever one we happened to pick,
+# exactly as with the E12-E15 matched square.
+#
+# One-variable comparisons this enables:
+#   retro_finetune_w2v_budget  vs  retro_w2v_noknn_budget   (retrieval on/off)
+#   retro_noknn_budget         vs  retro_w2v_noknn_budget   (encoder A/B)
+#
+# NB: facebook/wav2vec2-base has feat_extract_norm == "group", so it was
+# pretrained WITHOUT an attention mask. Wav2Vec2Encoder inherits the guard that
+# withholds the mask in that case (SESSION_HANDOFF.md §6.12); padded frames are
+# still excluded from the pooled embedding via the downsampled frame mask.
+defaults:
+  - retro_noknn_budget
+
+run_name: retro_w2v_noknn_budget_${data.name}
+
+model:
+  encoder:
+    _target_: retro_profile.models.Wav2Vec2Encoder
+    pretrained_name: facebook/wav2vec2-base
+    freeze: false
+    gradient_checkpointing: true
+    layer_aggregation: weighted    # 13 hidden states (1 conv + 12 transformer)

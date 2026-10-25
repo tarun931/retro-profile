@@ -1,0 +1,59 @@
+# @package _global_
+# RETRO-Profile, AGE ONLY -- single-task, WavLM, budget-matched, retrieval off.
+#
+# The hypothesis. The projector is shared across targets (CLAUDE.md §5), so in
+# the two-target model OrdCon has to order ONE embedding space along an age axis
+# and a height axis simultaneously. Those two axes are not independent: height
+# correlates strongly with gender (overall height r 0.69-0.72 but only 0.32-0.40
+# WITHIN gender, SESSION_HANDOFF.md §3.1b), while age does not. So the shared
+# space is a compromise, and OrdCon's ordering objective is being asked to do
+# two partly-conflicting jobs at once. Drop height and the whole space is free
+# to order along a single age axis.
+#
+# This is worth testing on its own terms. OrdCon meets its ordering objective in
+# every run measured (accuracy 0.69-0.73 against 0.5 chance) yet has never
+# improved MAE. One explanation is that the ordering it achieves is diluted by
+# having to serve height as well.
+#
+# No new loss code is required: OrdCon is already per-target with a learnable
+# axis, so a one-target model IS the single-axis version of it. What changes is
+# the model (one head, one attention stack) and the data (one label column).
+#
+# Baseline for comparison: `retro_noknn_budget`, which is this config with
+# height added back and nothing else different. Retrieval is off in both, so the
+# comparison isolates single-task vs multi-task.
+#
+# Note the selection metric adapts automatically. `val/combined_mae` sums only
+# the targets actually present, so here it reduces to age_MAE / 5.91 -- the
+# NaN-aware behaviour that also lets HeightCeleb train without an age column.
+# Height metrics simply do not exist for this run, so it cannot be placed in the
+# same table as the two-target runs on height; compare age only.
+# Inherits retro_finetune_budget, NOT retro_noknn_budget. The latter sets
+# `model.heads.height.use_retrieval: false`, and Hydra MERGES dicts, so that
+# block would resurrect a `height` key on top of the age-only model -- a head
+# with no `_target_`, which RetroProfile's nn.ModuleDict then rejects. The
+# retrieval-off settings are therefore repeated here rather than inherited.
+defaults:
+  - retro_finetune_budget
+  - override /model: retro_profile_age
+
+run_name: retro_age_only_budget_${data.name}
+
+data:
+  # One label column. The datamodule's label_stats, the loss, the metrics and
+  # the combined selection metric all key off this list.
+  targets: [age]
+
+model:
+  heads:
+    age:
+      use_retrieval: false
+
+training:
+  # Same reasoning as retro_finetune_noknn: with retrieval off there is no
+  # phase 2, so a two-phase curriculum would build a datastore the head never
+  # consults and freeze the embedding path halfway through for nothing.
+  two_phase:
+    enabled: false
+  datastore_rebuild:
+    every_n_epochs: 0

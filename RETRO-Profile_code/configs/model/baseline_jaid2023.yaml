@@ -1,0 +1,23 @@
+# RQ1 baseline #3 -- Jaid & AbdulHassan 2023, 1D CNN with filter-bank init.
+# iJOE 19(10), 2023. A true end-to-end model: raw waveform in, age/height/gender
+# out, with NO SSL encoder. The first conv layer is initialised from an auditory
+# filter bank and then left fully trainable (their distinction from SincNet).
+#
+# Architecture follows their Tables 1-2. Our parameter count is ~71.2 K against
+# their reported 77,603 -- the paper does not specify padding, the dense
+# connection, or the gender head's input, so an exact match is not derivable.
+name: baseline_jaid2023
+_target_: retro_profile.models.baselines.Jaid2023Baseline
+
+n_samples: 48000        # 3 s @ 16 kHz -- keep in sync with data.max_audio_seconds
+sample_rate: 16000
+
+filterbank: gammatone   # gammatone | morlet | random | he_uniform (their Fig. 8 ablation)
+n_filters: 64           # paper: 64 gammatone filters (40 for the Morlet variant)
+kernel_size: 100        # first-layer receptive field, stride = kernel (no overlap)
+
+block_channels: [32, 64, 64]   # the three residual blocks (their Table 1)
+dropout: 0.1                    # after each residual block
+
+target_names: [age, height]
+gender_name: gender             # auxiliary task only; never reported

@@ -1,0 +1,17 @@
+# @package _global_
+# TUNING on Run B's setting (2026-10-14), COMBINED run: the best WavLM learning rate (1e-6) and the best OrdCon
+# lambda (3.0) of the one-at-a-time grid, together. Both beat Run B on the leave-one-out calibrated TIMIT
+# validation score (LR 1e-6 1.4443, lambda 3.0 1.4342, Run B 1.5012), so the rule fixed before the grid ran
+# calls for this one run. Everything else is Run B (heightceleb_nisp_l100_s5).
+#
+# Run with retro_finetune.slurm, EXPERIMENT=heightceleb_nisp_enc1e6_l300_s5, WITH_RETRIEVAL=0, EVAL_CORPUS=timit;
+# then reevaluate.slurm EVAL_SPLIT=val OUT_SUFFIX=_val for the calibration.
+defaults:
+  - heightceleb_nisp_l100_s5
+
+run_name: heightceleb_nisp_enc1e6_l300_s5_${data.name}
+
+training:
+  encoder_lr: 1.0e-6
+  loss:
+    ordcon_weight: 3.0

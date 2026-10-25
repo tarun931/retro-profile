@@ -1,0 +1,18 @@
+# @package _global_
+# MIXUP CHECK (2026-10-18): the final Table 1 Gupta (gupta2022_finetune_wavlm_lr3e6) with mixup on its training batches
+# (training/mixup.py) -- as in Gupta et al. 2022 and Truong et al. 2022: each clip blended with a random other clip of
+# the batch, lam ~ U(0, 1), age / height / gender labels alike (gender as a soft target). Nothing else changes. Seed 42
+# first; compared with gupta2022_finetune_wavlm_lr3e6 seed 42 on TIMIT validation (val/combined_mae of the chosen
+# checkpoint, 1.2790 without mixup); test recorded only.
+#
+# Run with gupta_finetune.slurm, EXPERIMENT=gupta2022_finetune_wavlm_lr3e6_mixup, EVAL_CORPUS=timit; then reevaluate.slurm
+# per speaker on all 10 clips (Table 1 reading).
+defaults:
+  - gupta2022_finetune_wavlm_lr3e6
+
+run_name: gupta2022_finetune_wavlm_lr3e6_mixup_${data.name}
+
+training:
+  mixup:
+    enabled: true
+    alpha: 1.0

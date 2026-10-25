@@ -1,0 +1,12 @@
+# RQ1 baseline #1 — WavLM + regression MLP (stub).
+name: baseline_wavlm_mlp
+_target_: retro_profile.models.baselines.WavLMMLPBaseline
+
+encoder:
+  _target_: retro_profile.models.encoders.WavLMEncoder
+  pretrained_name: microsoft/wavlm-base-plus
+  freeze: true
+  output_dim: 768
+
+# Filled in by the user when they implement the baseline.
+config: {}

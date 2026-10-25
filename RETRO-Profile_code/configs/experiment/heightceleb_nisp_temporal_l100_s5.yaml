@@ -1,0 +1,18 @@
+# @package _global_
+# TEMPORAL ATTENTION ONLY on Run B's setting (2026-10-13).
+#
+# Identical to heightceleb_nisp_hier_l100_s5 (learned frame-level attention inside each clip, own LR 1e-3)
+# except the clips of a speaker are combined by a plain average instead of MIL attention. Against the
+# hierarchical run it isolates MIL; against Run B it changes both levels.
+#
+# Run with retro_finetune.slurm, EXPERIMENT=heightceleb_nisp_temporal_l100_s5, WITH_RETRIEVAL=0,
+# EVAL_CORPUS=timit; then reevaluate.slurm EVAL_SPLIT=val OUT_SUFFIX=_val for the calibration.
+defaults:
+  - heightceleb_nisp_hier_l100_s5
+
+run_name: heightceleb_nisp_temporal_l100_s5_${data.name}
+
+model:
+  pooling:
+    _target_: retro_profile.models.MeanPooling
+    input_dim: 768                  # = encoder output_dim (WavLM Base+)

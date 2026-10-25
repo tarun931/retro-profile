@@ -1,0 +1,32 @@
+# @package _global_
+# TRAINING LENGTH: 60 -> 100 epochs at the chosen OrdCon setting (lambda 1.0,
+# scale 5), with a separate best copy saved for each trait (2026-10-10).
+#
+# Why: in every run of the OrdCon tuning (E24), validation age was better in
+# epochs 50-59 than 10-19, and lambda 1.0 / scale 5 itself was saved at epoch
+# 59 of 60 -- age was still improving when training stopped. Height peaks early.
+#
+# Why per-trait copies: one combined checkpoint is saved at a compromise between
+# a trait that peaks early (height) and one still improving (age), so extra
+# epochs could simply be ignored by selection. training.checkpoint.per_target
+# keeps, IN ADDITION to the combined top-3 + last.ckpt, the single best epoch on
+# val/age/mae and on val/height/mae (best_age-*.ckpt, best_height-*.ckpt). Each
+# copy is scored only on its own trait. Nothing early-stops on them (rule R5).
+#
+# Everything else is identical to retro_ordcon_fixed_l100_s5: fine-tuned WavLM,
+# 8 s, 4 x 8 clips, LR 1e-4 / 1e-5, warmup 200 steps, val/combined_mae for the
+# main checkpoint, retrieval OFF in training, seed 42. The cosine schedule
+# stretches to 100 epochs (train.py sets total_steps from max_epochs), so this
+# is a longer schedule, not the old one continued.
+#
+# kNN is measured by switching retrieval on at test time (evaluate.py
+# --force-retrieval), as in E24.
+defaults:
+  - retro_ordcon_fixed_l100_s5
+
+run_name: retro_ordcon_fixed_l100_s5_e100_${data.name}
+
+training:
+  max_epochs: 100
+  checkpoint:
+    per_target: [age, height]
