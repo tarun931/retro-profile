@@ -1,6 +1,0 @@
-# Supplementary baseline (NOT one of the proposal's RQ1 systems) —
-# AnatomyNet physics-inspired stub, kept for the redundancy comparison.
-name: baseline_anatomynet
-_target_: retro_profile.models.baselines.AnatomyNetBaseline
-
-config: {}

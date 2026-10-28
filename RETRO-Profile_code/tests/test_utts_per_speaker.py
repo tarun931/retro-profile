@@ -79,18 +79,6 @@ def _cfg(experiment):
                                               overrides=[f"experiment={experiment}"]), resolve=True)
 
 
-@pytest.mark.parametrize("new,old", [("heightceleb_nisp_gupta_wavlm", "gupta2022_finetune_wavlm"),
-                                     ("heightceleb_nisp_jaid", "jaid2023")])
-def test_baselines_change_only_the_data_and_the_cap(new, old):
-    a, b, retro = _cfg(old), _cfg(new), _cfg("heightceleb_nisp_l100_s5")
-    assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {"data", "run_name", "output_dir"}
-    for k in ("train_unit", "batch_size", "bag_size", "max_audio_seconds", "targets", "augmentation"):
-        assert a["data"][k] == b["data"][k], k
-    assert b["data"]["utts_per_speaker"] == 8 == retro["data"]["bag_size"]
-    assert b["data"]["corpora"] == retro["data"]["corpora"]               # same speakers as RETRO B
-    assert b["data"]["_target_"] == "retro_profile.data.MultiCorpusDataModule"
-
-
 def test_run_metadata_records_the_cap():
     spec = importlib.util.spec_from_file_location(
         "evaluate_script", Path(__file__).resolve().parents[1] / "scripts" / "evaluate.py")
@@ -101,30 +89,6 @@ def test_run_metadata_records_the_cap():
     args = argparse.Namespace(unit="speaker", ckpt=Path("runs/x/checkpoints/epoch=3-step=1.ckpt"))
     meta = ev._run_metadata(cfg, args, nn.Linear(2, 1), {"epoch": 3}, None)
     assert meta["budget"]["utts_per_speaker"] == 8 and meta["budget"]["train_unit"] == "utterance"
-
-
-@pytest.mark.parametrize("new,old,cap", [("heightceleb_only_l100_s5", "retro_ordcon_fixed_l100_s5", None),
-                                         ("heightceleb_only_gupta_wavlm", "gupta2022_finetune_wavlm", 8),
-                                         ("heightceleb_only_jaid", "jaid2023", 8)])
-def test_heightceleb_only_runs_change_only_the_data(new, old, cap):
-    a, b = _cfg(old), _cfg(new)
-    assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {"data", "run_name", "output_dir"}
-    for k in ("train_unit", "batch_size", "bag_size", "max_audio_seconds", "targets", "augmentation"):
-        assert a["data"].get(k) == b["data"].get(k), k
-    assert b["data"]["root"] == "data/heightceleb" and b["data"].get("utts_per_speaker") == cap
-    assert b["data"]["splits"] == {"train": "train", "val": "dev", "test": "test"}   # official 40 test speakers
-
-
-@pytest.mark.parametrize("suf", ["l100_s5", "gupta_wavlm", "jaid"])
-def test_split2_runs_differ_from_official_split_only_in_manifests(suf):
-    a, b = _cfg(f"heightceleb_only_{suf}"), _cfg(f"heightceleb_split2_{suf}")
-    assert {k for k in set(a) | set(b) if a.get(k) != b.get(k)} == {"data", "run_name", "output_dir"}
-    # eval_fixed_clips added 17 Oct 2026 (Table 4): split2 validation / test score fixed clips. The E33 runs of 12 Oct
-    # were scored before it, on random draws.
-    assert {k for k in set(a["data"]) | set(b["data"]) if a["data"].get(k) != b["data"].get(k)} == \
-        {"name", "root", "eval_fixed_clips"}
-    assert b["data"]["root"] == "data/heightceleb_split2" and b["data"]["name"] == "heightceleb_split2"
-    assert b["data"]["eval_fixed_clips"] is True and a["data"].get("eval_fixed_clips") is None
 
 
 def test_split2_is_an_evaluable_corpus(hc_root):

@@ -1,8 +1,0 @@
-# @package _global_
-# Full RETRO-Profile experiment recipe — all three novelties enabled.
-defaults:
-  - override /model: retro_profile
-  - override /data: timit
-  - override /training: default
-
-run_name: retro_profile_full_${data.name}

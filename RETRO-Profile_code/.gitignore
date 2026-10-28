@@ -27,11 +27,7 @@ runs/
 logs/
 wandb/
 lightning_logs/
-data/raw/
-data/timit/
-data/nisp/
-data/heightceleb/
-data/heightceleb_split2*/
+data/
 # Derived VoxCeleb1 ages and the public sources behind them (names, birth years, video titles): never
 # redistribute (paper Section 7). Keep only the build scripts.
 /heightceleb/*

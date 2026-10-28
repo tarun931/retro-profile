@@ -3,7 +3,7 @@
 A model trained on other corpora can rank TIMIT speakers well and still put the whole scale off
 (HeightCeleb + NISP -> TIMIT: age r 0.71, bias +5.9 yr; SESSION_HANDOFF §0.7.13). Per target, this
 fits ``corrected = a * prediction + b`` by least squares on the VALIDATION speakers' bag predictions
-(``runs/<run>/eval_spk_val/``, from reevaluate.slurm EVAL_SPLIT=val OUT_SUFFIX=_val) and applies it
+(``runs/<run>/eval_spk_val/``, from evaluate.py --split val) and applies it
 unchanged to the test speakers (``eval_spk/``). Test labels are never used to fit. Method fixed in
 advance (2026-10-12): linear (primary); shift-only (a = 1, b = mean val error) as a check. The network
 is not retrained -- two numbers per target.

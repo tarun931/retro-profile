@@ -23,7 +23,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_gupta_lightning import _batch as gupta_batch  # noqa: E402
 from test_gupta_lightning import _lit_with as gupta_lit  # noqa: E402
 from test_lightning_module import LABEL_STATS, _make_batch, _make_model_and_litmodule  # noqa: E402
-from test_multi_corpus import _cfg  # noqa: E402
 
 import retro_profile.training.lightning_module as lm  # noqa: E402
 from retro_profile.training.mixup import mixup_batch  # noqa: E402
@@ -96,22 +95,6 @@ def test_both_training_modules_take_the_switch():
     loss = g.training_step(gupta_batch(), 0)                 # gender becomes a soft 0-1 target
     assert torch.isfinite(loss)
     loss.backward()
-
-
-def test_only_the_two_mixup_configs_turn_it_on():
-    on = sorted(p.name for p in (_ROOT / "configs").rglob("*.yaml") if "mixup:" in p.read_text())
-    assert on == ["gupta2022_finetune_wavlm_lr3e6_mixup.yaml", "retro_ordcon_fixed_l100_s5_b10_mixup.yaml"]
-
-
-@pytest.mark.parametrize("new, base", [
-    ("retro_ordcon_fixed_l100_s5_b10_mixup", "retro_ordcon_fixed_l100_s5_b10"),
-    ("gupta2022_finetune_wavlm_lr3e6_mixup", "gupta2022_finetune_wavlm_lr3e6"),
-])
-def test_each_mixup_config_differs_from_its_table1_setting_by_the_switch_alone(new, base):
-    a, b = _cfg(new), _cfg(base)
-    changed = {k for k in set(a) | set(b) if a.get(k) != b.get(k)}
-    assert changed == {"training.mixup.enabled", "training.mixup.alpha", "run_name", "output_dir"}, changed
-    assert a["training.mixup.enabled"] is True and a["training.mixup.alpha"] == 1.0
 
 
 def test_result_metadata_records_mixup():

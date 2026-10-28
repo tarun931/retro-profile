@@ -7,7 +7,6 @@ must differ from the base setting in its training data alone.
 
 from __future__ import annotations
 
-import os
 
 import pandas as pd
 import pytest
@@ -62,30 +61,3 @@ def test_language_filter_applies_to_the_pooled_split(nisp_root):
         NispDataset(root=nisp_root, split="train+test", languages=["klingon"])
 
 
-def test_nisp_full_experiment_changes_only_the_training_data():
-    from hydra import compose, initialize_config_dir
-    from omegaconf import OmegaConf
-    config_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "configs"))
-
-    def flat(d, prefix=""):
-        out = {}
-        for k, v in d.items():
-            key = f"{prefix}.{k}" if prefix else str(k)
-            out.update(flat(v, key) if isinstance(v, dict) else {key: v})
-        return out
-
-    def cfg(experiment):
-        with initialize_config_dir(config_dir=config_dir, version_base=None):
-            c = compose(config_name="default", overrides=[f"experiment={experiment}"])
-        return flat(OmegaConf.to_container(c, resolve=True))
-
-    base, new = cfg("retro_ordcon_fixed_l100_s5"), cfg("nisp_full_l100_s5")
-    changed = {k for k in set(base) | set(new) if base.get(k) != new.get(k)}
-    assert changed == {"data._target_", "data.name", "data.root", "data.splits.train",
-                       "data.splits.test", "run_name", "output_dir"}
-    assert new["data.splits.train"] == "train+test" and new["data.splits.val"] == "dev"
-
-    both = cfg("nisp_full_both_l100_s5")
-    changed = {k for k in set(new) | set(both) if new.get(k) != both.get(k)}
-    assert changed == {"data.root", "run_name", "output_dir"}
-    assert both["data.root"] == "data/nisp_both"

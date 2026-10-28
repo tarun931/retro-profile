@@ -2,7 +2,7 @@
 
 Inputs:
     --wav-root  VoxCeleb1 audio: <wav-root>/<VoxCeleb1 ID>/<YouTube video id>/<nnnnn>.wav
-                (scripts/cluster/unpack_voxceleb1.slurm unpacks it to <data-root>/voxceleb1/wav)
+                (the VoxCeleb1 dev and test archives unpacked into one folder, e.g. <data-root>/voxceleb1/wav)
     --heights   HeightCeleb's labels, heightceleb/height_celeb.csv (VoxCeleb1 ID, height, sex, split)
     --ages      our VoxCeleb1 ages, heightceleb/vox1_height_age.csv (heightceleb/build_vox1_ages.py:
                 one dated video and the speaker's age in it, 573 speakers)
@@ -25,7 +25,7 @@ age NaN, which the masked loss skips (CLAUDE.md detail 3). Never reads audio.
 speakers, 15 with an age -- and divides all 1,251 speakers ``--fractions`` (default 60/20/20) by
 GROUP: speakers who appear in the same YouTube video (co-star interviews: same recording, and
 VoxCeleb's automatic segmentation can file one person's voice under the other) or who share an
-identical clip (``--md5-csv``, from scripts/cluster/vox1_duplicates.slurm) always land in the same split,
+identical clip (``--md5-csv``, from scripts/clip_md5.py) always land in the same split,
 so no test speaker shares any recording with a training speaker (SESSION_HANDOFF §0.7.14). Groups
 are balanced on whether they hold an aged speaker, gender and height.
 """

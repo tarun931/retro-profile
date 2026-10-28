@@ -4,7 +4,7 @@ Rewritten 2026-08-31 against the ACTUAL release. The previous version assumed
 `<raw>/<language>/audio/<speaker>/*.wav` plus a per-language `metadata.csv`; no
 such layout exists. See SESSION_HANDOFF.md §11.
 
-REAL LAYOUT, after `scripts/cluster/download_nisp.sh` and extraction:
+REAL LAYOUT, after downloading the archives from github.com/iiscleap/NISP-Dataset and extracting them:
 
     <raw>/<Lang>_master/<session>/RECS/<NNNN>/<file>.wav
     <raw>/total_spkrinfo.list      space-separated, WITH header

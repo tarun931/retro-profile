@@ -131,7 +131,7 @@ class WavLMEncoder(BaseEncoder):
 
         # WavLM downsamples by ~320x; recover an aligned attention mask via the model.
         downsampled_mask = self._downsample_mask(flat_mask, agg.shape[1])
-        # getattr: HuBERTEncoder bypasses this class's __init__ and has no frame_pool.
+        # getattr: an encoder built without this class's __init__ has no frame_pool.
         frame_pool = getattr(self, "frame_pool", None)
         if frame_pool is None:
             utt_emb = self._masked_mean_time(agg, downsampled_mask)    # (BK, D)

@@ -279,18 +279,6 @@ def _flatten(d, prefix=""):
     return out
 
 
-def test_hierarchical_config_differs_from_the_base_only_in_frame_pooling():
-    base = _flatten(_compose("retro_ordcon_fixed_l100_s5"))
-    hier = _flatten(_compose("retro_hier_l100_s5"))
-    changed = {k for k in set(base) | set(hier) if base.get(k) != hier.get(k)}
-    assert changed == {
-        "run_name", "output_dir",
-        "model.encoder.frame_pooling", "model.encoder.frame_attention_hidden",
-        "model.encoder.frame_attention_dropout",
-    }
-    assert hier["model.encoder.frame_pooling"] == "attention"
-
-
 def _evaluate_script():
     spec = importlib.util.spec_from_file_location(
         "evaluate_script", Path(__file__).resolve().parent.parent / "scripts" / "evaluate.py")

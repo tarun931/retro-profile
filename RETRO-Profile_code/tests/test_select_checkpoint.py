@@ -12,9 +12,7 @@ would then have deleted epoch 39.
 from __future__ import annotations
 
 import importlib.util
-import os
 import re
-import shutil
 import subprocess
 from pathlib import Path
 
@@ -98,32 +96,3 @@ def test_cli_prints_the_path_and_fails_loudly(tmp_path):
     bad = subprocess.run(["python", str(ROOT / "scripts" / "select_checkpoint.py"), str(empty)],
                          capture_output=True, text=True)
     assert bad.returncode != 0 and bad.stdout == ""
-
-
-def _bash4() -> str | None:
-    for b in ("bash", "/usr/local/bin/bash", "/opt/homebrew/bin/bash"):
-        exe = shutil.which(b)
-        if exe:
-            out = subprocess.run([exe, "-c", "echo ${BASH_VERSINFO[0]}"], capture_output=True, text=True)
-            if out.stdout.strip().isdigit() and int(out.stdout) >= 4:
-                return exe
-    return None
-
-
-@pytest.mark.skipif(_bash4() is None, reason="prune_checkpoints.sh needs bash >= 4 (mapfile); the GPU cluster has it, macOS /bin/bash is 3.2")
-def test_prune_dry_run_keeps_the_phase2_best(tmp_path):
-    proj = tmp_path
-    (proj / "scripts" / "cluster").mkdir(parents=True)
-    shutil.copy(ROOT / "scripts" / "select_checkpoint.py", proj / "scripts")
-    shutil.copy(ROOT / "scripts" / "cluster" / "prune_checkpoints.sh", proj / "scripts" / "cluster")
-    run = _run(proj, REAL_FILES, TWO_PHASE, name="retro_finetune_budget_fixed_timit_s42")
-    (run / "checkpoints" / "best_age-epoch=17-val_age=0.5000.ckpt").write_bytes(b"")
-    out = subprocess.run(
-        [_bash4(), str(proj / "scripts" / "cluster" / "prune_checkpoints.sh"), "--dry"],
-        capture_output=True, text=True,
-        env={**os.environ, "PROJECT_DIR": str(proj),
-             "RUNS": "runs/retro_finetune_budget_fixed_timit_s42/"},
-    ).stdout
-    assert "keep  epoch=39-step=3920-val=1.3983.ckpt" in out
-    assert "would delete epoch=39" not in out
-    assert "best_age" not in out          # per-trait copies are never candidates

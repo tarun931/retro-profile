@@ -3,11 +3,9 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 
 import pandas as pd
 import pytest
-import yaml
 
 from retro_profile.data.heightceleb import HeightCelebDataset
 
@@ -58,7 +56,3 @@ def test_missing_manifest_names_the_prepare_script(tmp_path):
         HeightCelebDataset(root=tmp_path, split="train")
 
 
-def test_data_config_trains_both_targets_without_augmentation():
-    cfg = yaml.safe_load((Path(__file__).resolve().parents[1] / "configs/data/heightceleb.yaml").read_text())
-    assert cfg["targets"] == ["age", "height"] and cfg["augmentation"]["enabled"] is False
-    assert cfg["max_audio_seconds"] == 8.0 and cfg["bag_size"] == 8

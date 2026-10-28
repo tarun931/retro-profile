@@ -2,17 +2,13 @@
 
 from retro_profile.models.base import BaseProfileModel
 from retro_profile.models.baselines import (
-    AnatomyNetBaseline,
     Gupta2022Baseline,
     Jaid2023Baseline,
-    WavLMMLPBaseline,
 )
 from retro_profile.models.encoders import (
     BaseEncoder,
-    HuBERTEncoder,
     Wav2Vec2Encoder,
     WavLMEncoder,
-    WhisperEncoder,
 )
 from retro_profile.models.heads import MLPHead, ResidualRetrievalHead, RetrievalHead
 from retro_profile.models.pooling import AttentionPooling, MeanPooling, MILAttentionPooling
@@ -26,8 +22,6 @@ __all__ = [
     "BaseEncoder",
     "WavLMEncoder",
     "Wav2Vec2Encoder",
-    "HuBERTEncoder",
-    "WhisperEncoder",
     # Pooling
     "MeanPooling",
     "AttentionPooling",
@@ -37,10 +31,8 @@ __all__ = [
     "ResidualRetrievalHead",
     "RetrievalHead",
     # Baselines
-    "WavLMMLPBaseline",
     "Gupta2022Baseline",
     "Jaid2023Baseline",
-    "AnatomyNetBaseline",
     # Main
     "RetroProfile",
     # Registry

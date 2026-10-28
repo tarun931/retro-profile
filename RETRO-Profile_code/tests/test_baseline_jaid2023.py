@@ -215,13 +215,6 @@ def test_jaid_config_builds_the_intended_model():
     assert m.n_samples == 48_000
 
 
-def test_morlet_variant_uses_forty_wavelet_filters():
-    from retro_profile.utils import instantiate
-    m = instantiate(_cfg("jaid2023_morlet").model)
-    assert m.filterbank == "morlet"
-    assert m.frontend.out_channels == 40          # paper: 40 scales for the CWT bank
-
-
 def test_jaid_training_recipe_matches_the_paper():
     """MAE + plain sum (not uncertainty weighting), per-utterance, 3 s, batch 64."""
     cfg = _cfg("jaid2023")
